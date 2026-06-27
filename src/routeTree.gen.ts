@@ -9,12 +9,20 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as ValidationRouteImport } from './routes/validation'
 import { Route as TrainingRouteImport } from './routes/training'
 import { Route as RevenueRouteImport } from './routes/revenue'
 import { Route as PerformanceRouteImport } from './routes/performance'
+import { Route as InsightsRouteImport } from './routes/insights'
+import { Route as ExecutiveDeckRouteImport } from './routes/executive-deck'
 import { Route as DetailedRouteImport } from './routes/detailed'
 import { Route as IndexRouteImport } from './routes/index'
 
+const ValidationRoute = ValidationRouteImport.update({
+  id: '/validation',
+  path: '/validation',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const TrainingRoute = TrainingRouteImport.update({
   id: '/training',
   path: '/training',
@@ -28,6 +36,16 @@ const RevenueRoute = RevenueRouteImport.update({
 const PerformanceRoute = PerformanceRouteImport.update({
   id: '/performance',
   path: '/performance',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const InsightsRoute = InsightsRouteImport.update({
+  id: '/insights',
+  path: '/insights',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ExecutiveDeckRoute = ExecutiveDeckRouteImport.update({
+  id: '/executive-deck',
+  path: '/executive-deck',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DetailedRoute = DetailedRouteImport.update({
@@ -44,43 +62,87 @@ const IndexRoute = IndexRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/detailed': typeof DetailedRoute
+  '/executive-deck': typeof ExecutiveDeckRoute
+  '/insights': typeof InsightsRoute
   '/performance': typeof PerformanceRoute
   '/revenue': typeof RevenueRoute
   '/training': typeof TrainingRoute
+  '/validation': typeof ValidationRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/detailed': typeof DetailedRoute
+  '/executive-deck': typeof ExecutiveDeckRoute
+  '/insights': typeof InsightsRoute
   '/performance': typeof PerformanceRoute
   '/revenue': typeof RevenueRoute
   '/training': typeof TrainingRoute
+  '/validation': typeof ValidationRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/detailed': typeof DetailedRoute
+  '/executive-deck': typeof ExecutiveDeckRoute
+  '/insights': typeof InsightsRoute
   '/performance': typeof PerformanceRoute
   '/revenue': typeof RevenueRoute
   '/training': typeof TrainingRoute
+  '/validation': typeof ValidationRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/detailed' | '/performance' | '/revenue' | '/training'
+  fullPaths:
+    | '/'
+    | '/detailed'
+    | '/executive-deck'
+    | '/insights'
+    | '/performance'
+    | '/revenue'
+    | '/training'
+    | '/validation'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/detailed' | '/performance' | '/revenue' | '/training'
-  id: '__root__' | '/' | '/detailed' | '/performance' | '/revenue' | '/training'
+  to:
+    | '/'
+    | '/detailed'
+    | '/executive-deck'
+    | '/insights'
+    | '/performance'
+    | '/revenue'
+    | '/training'
+    | '/validation'
+  id:
+    | '__root__'
+    | '/'
+    | '/detailed'
+    | '/executive-deck'
+    | '/insights'
+    | '/performance'
+    | '/revenue'
+    | '/training'
+    | '/validation'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   DetailedRoute: typeof DetailedRoute
+  ExecutiveDeckRoute: typeof ExecutiveDeckRoute
+  InsightsRoute: typeof InsightsRoute
   PerformanceRoute: typeof PerformanceRoute
   RevenueRoute: typeof RevenueRoute
   TrainingRoute: typeof TrainingRoute
+  ValidationRoute: typeof ValidationRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/validation': {
+      id: '/validation'
+      path: '/validation'
+      fullPath: '/validation'
+      preLoaderRoute: typeof ValidationRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/training': {
       id: '/training'
       path: '/training'
@@ -100,6 +162,20 @@ declare module '@tanstack/react-router' {
       path: '/performance'
       fullPath: '/performance'
       preLoaderRoute: typeof PerformanceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/insights': {
+      id: '/insights'
+      path: '/insights'
+      fullPath: '/insights'
+      preLoaderRoute: typeof InsightsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/executive-deck': {
+      id: '/executive-deck'
+      path: '/executive-deck'
+      fullPath: '/executive-deck'
+      preLoaderRoute: typeof ExecutiveDeckRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/detailed': {
@@ -122,9 +198,12 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   DetailedRoute: DetailedRoute,
+  ExecutiveDeckRoute: ExecutiveDeckRoute,
+  InsightsRoute: InsightsRoute,
   PerformanceRoute: PerformanceRoute,
   RevenueRoute: RevenueRoute,
   TrainingRoute: TrainingRoute,
+  ValidationRoute: ValidationRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
