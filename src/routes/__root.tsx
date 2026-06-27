@@ -77,14 +77,13 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Lovable App" },
-      { name: "description", content: "Lovable Generated Project" },
-      { name: "author", content: "Lovable" },
-      { property: "og:title", content: "Lovable App" },
-      { property: "og:description", content: "Lovable Generated Project" },
+      { title: "ITF 2024 Corporate Scorecard – Management Reporting" },
+      { name: "description", content: "Interactive management reporting system for the Industrial Training Fund 2024 End-of-Year Corporate Scorecard." },
+      { name: "author", content: "ITF Corporate Planning Department" },
+      { property: "og:title", content: "ITF 2024 Corporate Scorecard – Management Reporting" },
+      { property: "og:description", content: "Director-level interactive dashboard covering KRAs, training, revenue and area-office performance for 2024." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
-      { name: "twitter:site", content: "@Lovable" },
     ],
     links: [
       {
