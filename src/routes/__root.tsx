@@ -81,9 +81,13 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "description", content: "Interactive management reporting system for the Industrial Training Fund 2024 End-of-Year Corporate Scorecard." },
       { name: "author", content: "ITF Corporate Planning Department" },
       { property: "og:title", content: "ITF 2024 Corporate Scorecard – Management Reporting" },
-      { property: "og:description", content: "Director-level interactive dashboard covering KRAs, training, revenue and area-office performance for 2024." },
+      { property: "og:description", content: "Interactive management reporting system for the Industrial Training Fund 2024 End-of-Year Corporate Scorecard." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
+      { name: "twitter:title", content: "ITF 2024 Corporate Scorecard – Management Reporting" },
+      { name: "twitter:description", content: "Interactive management reporting system for the Industrial Training Fund 2024 End-of-Year Corporate Scorecard." },
+      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/2b50409e-0b80-4b2e-a107-43d7b5ee576a/id-preview-176e6177--b80e2109-e223-4b3d-9d94-e858b5c33e53.lovable.app-1782577824596.png" },
+      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/2b50409e-0b80-4b2e-a107-43d7b5ee576a/id-preview-176e6177--b80e2109-e223-4b3d-9d94-e858b5c33e53.lovable.app-1782577824596.png" },
     ],
     links: [
       {
