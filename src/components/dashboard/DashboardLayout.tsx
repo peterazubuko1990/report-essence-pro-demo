@@ -1,17 +1,20 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import logo from "@/assets/itf-logo.asset.json";
 import type { ReactNode } from "react";
+import { YearSwitcher } from "@/components/dashboard/YearSwitcher";
 
 const nav = [
   { to: "/", label: "Executive Overview" },
   { to: "/performance", label: "Corporate Performance" },
   { to: "/training", label: "Training Analysis" },
   { to: "/revenue", label: "Revenue Analysis" },
+  { to: "/analytics", label: "Visual Analytics" },
   { to: "/detailed", label: "Detailed Analysis" },
   { to: "/insights", label: "Management Insights" },
   { to: "/validation", label: "Data Validation" },
   { to: "/executive-deck", label: "Executive Presentation" },
 ];
+
 
 export function DashboardLayout({ children, title, subtitle }: { children: ReactNode; title: string; subtitle?: string }) {
   const path = useRouterState({ select: (s) => s.location.pathname });
@@ -25,13 +28,18 @@ export function DashboardLayout({ children, title, subtitle }: { children: React
             <div className="text-lg font-semibold leading-tight">2024 Corporate Scorecard — Management Reporting System</div>
             <div className="text-[11px] text-white/80">Corporate Planning Department · January – December 2024</div>
           </div>
-          <div className="text-right text-[11px] text-white/80">
-            <div className="font-semibold text-white">Director-Level Dashboard</div>
-            <div>Prepared by ICT · Business Intelligence</div>
+          <div className="flex items-center gap-3">
+            <YearSwitcher />
+            <Link to="/admin" className="rounded-md bg-itf-gold text-itf-ink px-3 py-1.5 text-[11px] font-semibold hover:bg-itf-gold/90">Admin</Link>
+            <div className="text-right text-[11px] text-white/80 hidden md:block">
+              <div className="font-semibold text-white">Director-Level Dashboard</div>
+              <div>Prepared by ICT · Business Intelligence</div>
+            </div>
           </div>
         </div>
       </header>
       <div className="flex">
+
         <aside className="w-60 shrink-0 border-r border-itf-rule bg-white min-h-[calc(100vh-78px)]">
           <nav className="py-3">
             {nav.map((n) => {
