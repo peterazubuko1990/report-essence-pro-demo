@@ -17,7 +17,11 @@ import { Route as InsightsRouteImport } from './routes/insights'
 import { Route as ExecutiveDeckRouteImport } from './routes/executive-deck'
 import { Route as DetailedRouteImport } from './routes/detailed'
 import { Route as AnalyticsRouteImport } from './routes/analytics'
+import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AdminResetRouteImport } from './routes/admin.reset'
+import { Route as AdminLoginRouteImport } from './routes/admin.login'
+import { Route as AdminForgotRouteImport } from './routes/admin.forgot'
 
 const ValidationRoute = ValidationRouteImport.update({
   id: '/validation',
@@ -59,14 +63,35 @@ const AnalyticsRoute = AnalyticsRouteImport.update({
   path: '/analytics',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminRoute = AdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminResetRoute = AdminResetRouteImport.update({
+  id: '/reset',
+  path: '/reset',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminLoginRoute = AdminLoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminForgotRoute = AdminForgotRouteImport.update({
+  id: '/forgot',
+  path: '/forgot',
+  getParentRoute: () => AdminRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/admin': typeof AdminRouteWithChildren
   '/analytics': typeof AnalyticsRoute
   '/detailed': typeof DetailedRoute
   '/executive-deck': typeof ExecutiveDeckRoute
@@ -75,9 +100,13 @@ export interface FileRoutesByFullPath {
   '/revenue': typeof RevenueRoute
   '/training': typeof TrainingRoute
   '/validation': typeof ValidationRoute
+  '/admin/forgot': typeof AdminForgotRoute
+  '/admin/login': typeof AdminLoginRoute
+  '/admin/reset': typeof AdminResetRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/admin': typeof AdminRouteWithChildren
   '/analytics': typeof AnalyticsRoute
   '/detailed': typeof DetailedRoute
   '/executive-deck': typeof ExecutiveDeckRoute
@@ -86,10 +115,14 @@ export interface FileRoutesByTo {
   '/revenue': typeof RevenueRoute
   '/training': typeof TrainingRoute
   '/validation': typeof ValidationRoute
+  '/admin/forgot': typeof AdminForgotRoute
+  '/admin/login': typeof AdminLoginRoute
+  '/admin/reset': typeof AdminResetRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/admin': typeof AdminRouteWithChildren
   '/analytics': typeof AnalyticsRoute
   '/detailed': typeof DetailedRoute
   '/executive-deck': typeof ExecutiveDeckRoute
@@ -98,11 +131,15 @@ export interface FileRoutesById {
   '/revenue': typeof RevenueRoute
   '/training': typeof TrainingRoute
   '/validation': typeof ValidationRoute
+  '/admin/forgot': typeof AdminForgotRoute
+  '/admin/login': typeof AdminLoginRoute
+  '/admin/reset': typeof AdminResetRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/admin'
     | '/analytics'
     | '/detailed'
     | '/executive-deck'
@@ -111,9 +148,13 @@ export interface FileRouteTypes {
     | '/revenue'
     | '/training'
     | '/validation'
+    | '/admin/forgot'
+    | '/admin/login'
+    | '/admin/reset'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/admin'
     | '/analytics'
     | '/detailed'
     | '/executive-deck'
@@ -122,9 +163,13 @@ export interface FileRouteTypes {
     | '/revenue'
     | '/training'
     | '/validation'
+    | '/admin/forgot'
+    | '/admin/login'
+    | '/admin/reset'
   id:
     | '__root__'
     | '/'
+    | '/admin'
     | '/analytics'
     | '/detailed'
     | '/executive-deck'
@@ -133,10 +178,14 @@ export interface FileRouteTypes {
     | '/revenue'
     | '/training'
     | '/validation'
+    | '/admin/forgot'
+    | '/admin/login'
+    | '/admin/reset'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AdminRoute: typeof AdminRouteWithChildren
   AnalyticsRoute: typeof AnalyticsRoute
   DetailedRoute: typeof DetailedRoute
   ExecutiveDeckRoute: typeof ExecutiveDeckRoute
@@ -205,6 +254,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AnalyticsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin': {
+      id: '/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AdminRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -212,11 +268,47 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/reset': {
+      id: '/admin/reset'
+      path: '/reset'
+      fullPath: '/admin/reset'
+      preLoaderRoute: typeof AdminResetRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/login': {
+      id: '/admin/login'
+      path: '/login'
+      fullPath: '/admin/login'
+      preLoaderRoute: typeof AdminLoginRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/forgot': {
+      id: '/admin/forgot'
+      path: '/forgot'
+      fullPath: '/admin/forgot'
+      preLoaderRoute: typeof AdminForgotRouteImport
+      parentRoute: typeof AdminRoute
+    }
   }
 }
 
+interface AdminRouteChildren {
+  AdminForgotRoute: typeof AdminForgotRoute
+  AdminLoginRoute: typeof AdminLoginRoute
+  AdminResetRoute: typeof AdminResetRoute
+}
+
+const AdminRouteChildren: AdminRouteChildren = {
+  AdminForgotRoute: AdminForgotRoute,
+  AdminLoginRoute: AdminLoginRoute,
+  AdminResetRoute: AdminResetRoute,
+}
+
+const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AdminRoute: AdminRouteWithChildren,
   AnalyticsRoute: AnalyticsRoute,
   DetailedRoute: DetailedRoute,
   ExecutiveDeckRoute: ExecutiveDeckRoute,
