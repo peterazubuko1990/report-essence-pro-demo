@@ -16,6 +16,7 @@ import { Route as PerformanceRouteImport } from './routes/performance'
 import { Route as InsightsRouteImport } from './routes/insights'
 import { Route as ExecutiveDeckRouteImport } from './routes/executive-deck'
 import { Route as DetailedRouteImport } from './routes/detailed'
+import { Route as AnalyticsRouteImport } from './routes/analytics'
 import { Route as IndexRouteImport } from './routes/index'
 
 const ValidationRoute = ValidationRouteImport.update({
@@ -53,6 +54,11 @@ const DetailedRoute = DetailedRouteImport.update({
   path: '/detailed',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AnalyticsRoute = AnalyticsRouteImport.update({
+  id: '/analytics',
+  path: '/analytics',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
@@ -61,6 +67,7 @@ const IndexRoute = IndexRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/analytics': typeof AnalyticsRoute
   '/detailed': typeof DetailedRoute
   '/executive-deck': typeof ExecutiveDeckRoute
   '/insights': typeof InsightsRoute
@@ -71,6 +78,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/analytics': typeof AnalyticsRoute
   '/detailed': typeof DetailedRoute
   '/executive-deck': typeof ExecutiveDeckRoute
   '/insights': typeof InsightsRoute
@@ -82,6 +90,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/analytics': typeof AnalyticsRoute
   '/detailed': typeof DetailedRoute
   '/executive-deck': typeof ExecutiveDeckRoute
   '/insights': typeof InsightsRoute
@@ -94,6 +103,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/analytics'
     | '/detailed'
     | '/executive-deck'
     | '/insights'
@@ -104,6 +114,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/analytics'
     | '/detailed'
     | '/executive-deck'
     | '/insights'
@@ -114,6 +125,7 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/analytics'
     | '/detailed'
     | '/executive-deck'
     | '/insights'
@@ -125,6 +137,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AnalyticsRoute: typeof AnalyticsRoute
   DetailedRoute: typeof DetailedRoute
   ExecutiveDeckRoute: typeof ExecutiveDeckRoute
   InsightsRoute: typeof InsightsRoute
@@ -185,6 +198,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DetailedRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/analytics': {
+      id: '/analytics'
+      path: '/analytics'
+      fullPath: '/analytics'
+      preLoaderRoute: typeof AnalyticsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -197,6 +217,7 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AnalyticsRoute: AnalyticsRoute,
   DetailedRoute: DetailedRoute,
   ExecutiveDeckRoute: ExecutiveDeckRoute,
   InsightsRoute: InsightsRoute,
