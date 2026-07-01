@@ -80,7 +80,7 @@ function AdminHome() {
   const addYear = async () => {
     const y = parseInt(newYear, 10);
     if (!y) return;
-    const { error } = await supabase.from("years").insert({ year: y });
+    const { error } = await supabase.from("years").insert({ year: y, label: `FY ${y}` });
     if (error) return alert(error.message);
     setNewYear("");
     qc.invalidateQueries({ queryKey: ["years"] });
