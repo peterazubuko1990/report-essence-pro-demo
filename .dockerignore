@@ -1,0 +1,10 @@
+.git
+node_modules
+.output
+.vinxi
+dist
+.env
+.env.local
+.lovable
+supabase/.branches
+supabase/.temp
