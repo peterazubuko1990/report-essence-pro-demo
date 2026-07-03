@@ -99,6 +99,7 @@ function AdminHome() {
     if (error) return alert(error.message);
     setNewYear("");
     qc.invalidateQueries({ queryKey: ["years"] });
+    qc.invalidateQueries({ queryKey: ["years_with_data"] });
     setYear(y);
   };
 
