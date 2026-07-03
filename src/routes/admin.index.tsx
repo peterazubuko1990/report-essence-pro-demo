@@ -8,7 +8,8 @@ export const Route = createFileRoute("/admin/")({
   component: AdminHome,
 });
 
-type TableKey = "kra_rows" | "revenue_rows" | "area_revenue" | "training_programmes" | "staff_school" | "hr_metrics" | "challenges" | "way_forward";
+type TableKey = "kra_rows" | "revenue_rows" | "area_revenue" | "training_programmes" | "staff_school" | "hr_metrics" | "challenges" | "way_forward" | "wins" | "presenter_notes";
+const sb = supabase as any;
 
 type FieldDef = { name: string; label: string; type: "text" | "number" | "textarea"; required?: boolean; nullable?: boolean };
 type TableDef = { key: TableKey; label: string; fields: FieldDef[]; order?: string };
@@ -66,6 +67,20 @@ const TABLES: TableDef[] = [
   { key: "way_forward", label: "Way Forward", order: "sort_order",
     fields: [
       { name: "text", label: "Recommendation", type: "textarea", required: true },
+      { name: "sort_order", label: "Sort", type: "number" },
+    ] },
+  { key: "wins", label: "Wins / Achievements", order: "sort_order",
+    fields: [
+      { name: "section", label: "Section (e.g. overview, KRA 1)", type: "text", required: true },
+      { name: "text", label: "Achievement", type: "textarea", required: true },
+      { name: "tone", label: "Tone (good / warn / bad)", type: "text" },
+      { name: "sort_order", label: "Sort", type: "number" },
+    ] },
+  { key: "presenter_notes", label: "Presenter Notes", order: "sort_order",
+    fields: [
+      { name: "section", label: "Section key (matches page section)", type: "text", required: true },
+      { name: "title", label: "Title", type: "text", nullable: true },
+      { name: "body", label: "Body / commentary", type: "textarea", required: true },
       { name: "sort_order", label: "Sort", type: "number" },
     ] },
 ];
