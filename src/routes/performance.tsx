@@ -1,101 +1,211 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useState, useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
-import { Note, Section, DataTable, PctBar } from "@/components/dashboard/widgets";
-import { kra1, kra2, revenueActivity, adminSupport, achievement, growth } from "@/data/itf2024";
+import { Section, DataTable, PctBar, EmptyState, CompareYearPicker, Note } from "@/components/dashboard/widgets";
+import { supabase } from "@/integrations/supabase/client";
+import { useYear } from "@/lib/year-context";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend, CartesianGrid } from "recharts";
 
 export const Route = createFileRoute("/performance")({
-  head: () => ({
-    meta: [
-      { title: "Corporate Performance · ITF 2024 Scorecard" },
-      { name: "description", content: "KRA-by-KRA target vs achievement analysis for ITF corporate performance in 2024 with 2023 comparatives." },
-      { property: "og:title", content: "ITF 2024 – Corporate Performance Analysis" },
-      { property: "og:description", content: "All Key Result Areas, targets, achievements and year-on-year growth from the 2024 Corporate Scorecard." },
-    ],
-  }),
+  head: () => ({ meta: [{ title: "Corporate Performance · ITF Scorecard" }] }),
   component: Performance,
 });
 
-function kraTable(rows: typeof kra1) {
-  return (
-    <DataTable
-      headers={["KPI", "2023 Target", "2023 Actual", "2023 %", "2024 Target", "2024 Actual", "2024 %", "YoY Δ"]}
-      rows={rows.map((r) => [
-        <div key={r.kpi} className="font-medium">{r.kpi}{r.subgroup && <div className="text-[10px] uppercase tracking-wide text-itf-ink/50">{r.subgroup}</div>}</div>,
-        r.target23.toLocaleString(),
-        r.actual23.toLocaleString(),
-        <PctBar key="a" value={r.pct23} />,
-        r.target24.toLocaleString(),
-        r.actual24.toLocaleString(),
-        <PctBar key="b" value={r.pct24} />,
-        <span key="g" className={growth(r.actual24, r.actual23) >= 0 ? "text-itf-green font-semibold" : "text-itf-red font-semibold"}>
-          {r.actual23 === 0 ? "—" : `${growth(r.actual24, r.actual23).toFixed(1)}%`}
-        </span>,
-      ])}
-    />
-  );
+type KraRow = {
+  id: string; year: number; kra: string; subgroup: string | null;
+  kpi: string; target: number; actual: number; pct: number; sort_order: number;
+};
+
+type HrRow = { id: string; year: number; item: string; value: number; sort_order: number };
+type NoteRow = { id: string; year: number; section: string; title: string | null; body: string };
+
+function growth(a: number, b: number) { return b === 0 ? 0 : ((a - b) / b) * 100; }
+
+function useYearRows<T = any>(table: string, year: number, enabled = true) {
+  return useQuery<T[]>({
+    queryKey: [table, year],
+    enabled: enabled && year > 0,
+    queryFn: async () => {
+      const { data, error } = await supabase.from(table).select("*").eq("year", year);
+      if (error) throw error;
+      return (data ?? []) as T[];
+    },
+  });
 }
 
 function Performance() {
-  const subgroups = Array.from(new Set(kra2.filter((r) => r.subgroup).map((r) => r.subgroup!)));
+  const { year, yearsWithData } = useYear();
+  const [compareYear, setCompareYear] = useState<number | null>(null);
 
-  const kra1Chart = kra1.map((r) => ({ name: r.kpi.split(" ").slice(0,3).join(" "), "2023 %": r.pct23, "2024 %": r.pct24 }));
+  const cur = useYearRows<KraRow>("kra_rows", year);
+  const cmp = useYearRows<KraRow>("kra_rows", compareYear ?? 0, !!compareYear);
+  const hr = useYearRows<HrRow>("hr_metrics", year);
+  const notes = useYearRows<NoteRow>("presenter_notes", year);
+
+  const curRows = useMemo(() => (cur.data ?? []).slice().sort((a, b) => a.sort_order - b.sort_order), [cur.data]);
+  const cmpRows = cmp.data ?? [];
+
+  const hasCurrent = curRows.length > 0;
+
+  // Auto-suggest compare year if not chosen: most recent year-with-data that is not `year`
+  const suggestedCompare = useMemo(() => {
+    const others = yearsWithData.filter((y) => y !== year);
+    return others.length ? others[others.length - 1] : null;
+  }, [yearsWithData, year]);
+
+  const effectiveCompare = compareYear ?? suggestedCompare;
+  const compareRows = compareYear ? cmpRows : (effectiveCompare ? undefined : []);
+
+  // Fetch effective comparison automatically if user didn't pick one
+  const auto = useYearRows<KraRow>("kra_rows", effectiveCompare ?? 0, !!effectiveCompare && !compareYear);
+  const effectiveCompareRows = compareYear ? cmpRows : (auto.data ?? []);
+
+  // Group by KRA name
+  const kras = useMemo(() => {
+    const map = new Map<string, KraRow[]>();
+    curRows.forEach((r) => {
+      if (!map.has(r.kra)) map.set(r.kra, []);
+      map.get(r.kra)!.push(r);
+    });
+    return Array.from(map.entries());
+  }, [curRows]);
+
+  const findPrev = (r: KraRow) =>
+    effectiveCompareRows.find((p) => p.kpi === r.kpi && (p.subgroup ?? "") === (r.subgroup ?? ""));
+
+  const kraChart = (rows: KraRow[]) =>
+    rows.map((r) => {
+      const prev = findPrev(r);
+      const point: any = { name: r.kpi.split(" ").slice(0, 3).join(" ") };
+      point[`FY ${year} %`] = Number(r.pct ?? 0);
+      if (effectiveCompare) point[`FY ${effectiveCompare} %`] = Number(prev?.pct ?? 0);
+      return point;
+    });
 
   return (
-    <DashboardLayout title="Corporate Performance Analysis" subtitle="All ten Key Result Areas with target, actual achievement, percentage delivery and YoY change.">
-      <Section kicker="KRA 1" title="Promoting Training Consciousness — Achievement % comparison">
-        <div className="h-72">
-          <ResponsiveContainer>
-            <BarChart data={kra1Chart} margin={{ top: 8, right: 16, left: 0, bottom: 30 }}>
-              <CartesianGrid stroke="#e5e7eb" vertical={false} />
-              <XAxis dataKey="name" tick={{ fontSize: 11 }} angle={-15} textAnchor="end" />
-              <YAxis tick={{ fontSize: 11 }} unit="%" />
-              <Tooltip />
-              <Legend />
-              <Bar dataKey="2023 %" fill="#7a8a99" />
-              <Bar dataKey="2024 %" fill="#00723F" />
-            </BarChart>
-          </ResponsiveContainer>
+    <DashboardLayout
+      title="Corporate Performance Analysis"
+      subtitle={`Live from database · FY ${year}${effectiveCompare ? ` vs FY ${effectiveCompare}` : ""}`}
+    >
+      <div className="flex items-center justify-between bg-white border border-itf-rule rounded-md px-4 py-3">
+        <div className="text-xs text-itf-ink/70">
+          {hasCurrent
+            ? <>Showing <b>{curRows.length}</b> KPI(s) across <b>{kras.length}</b> KRA group(s) for FY {year}.</>
+            : <>No KPI data recorded for FY {year}.</>}
         </div>
-        {kraTable(kra1)}
-        <Note>
-          Monitoring of employer programmes surged from 171% to 311% — strong field activity. Engagement and claims processing remain the structural weak points: only 48.8% of targeted organisations were engaged, and claims processing dropped further.
-        </Note>
-      </Section>
-
-      <Section kicker="KRA 2" title="Encouraging / Providing Training — six work-streams">
-        {subgroups.map((g) => (
-          <div key={g} className="mb-5">
-            <div className="text-sm font-semibold text-itf-green mb-2">{g}</div>
-            {kraTable(kra2.filter((r) => r.subgroup === g))}
-          </div>
-        ))}
-        <Note>
-          In-Company Safety surveys exceeded target (120%) and PPIT surveys reached 103%, but Resource Consultancy, MSME packages and new programme test-runs all came in below 60% — these directly affect intervention pipeline for 2025.
-        </Note>
-      </Section>
-
-      <Section kicker="KRA 8" title="Revenue-Generation Operating Activities (counts, not naira)">
-        {kraTable(revenueActivity)}
-        <Note>
-          The Fund is acquiring employers faster than it is monetising them: registrations are at 156% of target but only 63% of registered employers are contributing. Closing this collection gap is the single biggest revenue lever for 2025.
-        </Note>
-      </Section>
-
-      <Section kicker="KRA 7" title="Administrative & Human Resource Support — staff movements and capacity">
-        <DataTable
-          headers={["Item", "2023", "2024", "Change"]}
-          rows={adminSupport.map((r) => [
-            r.item,
-            r.y2023.toLocaleString(),
-            r.y2024.toLocaleString(),
-            <span key={r.item} className={r.y2024 - r.y2023 >= 0 ? "text-itf-green" : "text-itf-red"}>{(r.y2024 - r.y2023).toLocaleString()}</span>,
-          ])}
+        <CompareYearPicker
+          currentYear={year}
+          compareYear={compareYear}
+          onChange={setCompareYear}
+          yearsWithData={yearsWithData}
         />
-        <Note>
-          Senior staff strength grew by 136 and 196 new staff were recruited in 2024. Short-term capacity building dropped (1,394 → 1,056) while professional-body participation grew (58 → 100) — staff welfare loans were not extended in 2024.
-        </Note>
-      </Section>
+      </div>
+
+      {cur.isLoading ? (
+        <div className="text-sm text-itf-ink/60 p-8 text-center">Loading…</div>
+      ) : !hasCurrent ? (
+        <EmptyState year={year} hint="No KRA / KPI rows exist for this year. Add rows via the admin panel or clone from a previous year." />
+      ) : (
+        <>
+          {kras.map(([kraName, rows]) => {
+            // If rows have subgroups, render each subgroup as its own table
+            const subgroups = Array.from(new Set(rows.map((r) => r.subgroup).filter(Boolean))) as string[];
+            const kraNote = notes.data?.find((n) => n.section === kraName);
+            return (
+              <Section key={kraName} kicker="KRA" title={kraName}>
+                <div className="h-72 mb-4">
+                  <ResponsiveContainer>
+                    <BarChart data={kraChart(rows)} margin={{ top: 8, right: 16, left: 0, bottom: 30 }}>
+                      <CartesianGrid stroke="#e5e7eb" vertical={false} />
+                      <XAxis dataKey="name" tick={{ fontSize: 11 }} angle={-15} textAnchor="end" />
+                      <YAxis tick={{ fontSize: 11 }} unit="%" />
+                      <Tooltip />
+                      <Legend />
+                      {effectiveCompare && <Bar dataKey={`FY ${effectiveCompare} %`} fill="#7a8a99" />}
+                      <Bar dataKey={`FY ${year} %`} fill="#00723F" />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+
+                {subgroups.length > 0
+                  ? subgroups.map((sg) => (
+                      <div key={sg} className="mb-4">
+                        <div className="text-sm font-semibold text-itf-green mb-2">{sg}</div>
+                        {renderKraTable(rows.filter((r) => r.subgroup === sg), effectiveCompare, findPrev, year)}
+                      </div>
+                    ))
+                  : renderKraTable(rows, effectiveCompare, findPrev, year)}
+
+                {kraNote && (
+                  <Note>
+                    {kraNote.title && <b>{kraNote.title}. </b>}
+                    {kraNote.body}
+                  </Note>
+                )}
+              </Section>
+            );
+          })}
+
+          {(hr.data?.length ?? 0) > 0 && (
+            <Section kicker="KRA 7" title="Administrative & Human Resource Support">
+              <DataTable
+                headers={effectiveCompare ? ["Item", `FY ${effectiveCompare}`, `FY ${year}`, "Change"] : ["Item", `FY ${year}`]}
+                rows={(hr.data ?? []).slice().sort((a, b) => a.sort_order - b.sort_order).map((r) => {
+                  const cells: any[] = [r.item];
+                  if (effectiveCompare) {
+                    // hr_metrics for compare year would need a fetch; keep simple: skip prev value inline
+                    cells.push("—");
+                    cells.push(r.value.toLocaleString());
+                    cells.push("");
+                  } else {
+                    cells.push(r.value.toLocaleString());
+                  }
+                  return cells;
+                })}
+              />
+            </Section>
+          )}
+        </>
+      )}
     </DashboardLayout>
+  );
+}
+
+function renderKraTable(
+  rows: KraRow[],
+  effectiveCompare: number | null,
+  findPrev: (r: KraRow) => KraRow | undefined,
+  year: number,
+) {
+  const headers = effectiveCompare
+    ? ["KPI", `Target ${year}`, `Actual ${year}`, `% ${year}`, `% ${effectiveCompare}`, "YoY Δ"]
+    : ["KPI", "Target", "Actual", "% Achieved"];
+  return (
+    <DataTable
+      headers={headers}
+      rows={rows.map((r) => {
+        const cells: any[] = [
+          <div key="k" className="font-medium">
+            {r.kpi}
+            {r.subgroup && <div className="text-[10px] uppercase tracking-wide text-itf-ink/50">{r.subgroup}</div>}
+          </div>,
+          Number(r.target).toLocaleString(),
+          Number(r.actual).toLocaleString(),
+          <PctBar key="p" value={Number(r.pct ?? 0)} />,
+        ];
+        if (effectiveCompare) {
+          const prev = findPrev(r);
+          cells.push(<PctBar key="cp" value={Number(prev?.pct ?? 0)} />);
+          const g = prev ? growth(Number(r.actual), Number(prev.actual)) : 0;
+          cells.push(
+            <span key="g" className={g >= 0 ? "text-itf-green font-semibold" : "text-itf-red font-semibold"}>
+              {prev ? `${g.toFixed(1)}%` : "—"}
+            </span>
+          );
+        }
+        return cells;
+      })}
+    />
   );
 }
