@@ -1,8 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
-import { Kpi, Note, Section, DataTable, PctBar } from "@/components/dashboard/widgets";
+import { Kpi, Note, Section, DataTable, PctBar, EmptyState } from "@/components/dashboard/widgets";
 import { headlineRevenue, fmtNaira, growth, achievement, trainingTotals } from "@/data/itf2024";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend, CartesianGrid } from "recharts";
+import { useYear } from "@/lib/year-context";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -17,6 +18,15 @@ export const Route = createFileRoute("/")({
 });
 
 function ExecutiveOverview() {
+  const { year, hasData } = useYear();
+  if (!hasData(year)) {
+    return (
+      <DashboardLayout title="Executive Overview" subtitle={`FY ${year}`}>
+        <EmptyState year={year} hint="No operational data recorded for this year. Use the admin panel to add KRA, revenue and training records, or clone from a previous year." />
+      </DashboardLayout>
+    );
+  }
+
   const tc = headlineRevenue[0];
   const cf = headlineRevenue[1];
   const oi = headlineRevenue[2];
