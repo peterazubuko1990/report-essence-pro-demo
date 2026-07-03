@@ -72,3 +72,35 @@ export function PctBar({ value }: { value: number }) {
     </div>
   );
 }
+
+export function EmptyState({ year, hint }: { year: number; hint?: string }) {
+  return (
+    <div className="bg-white border border-dashed border-itf-rule rounded-md p-10 text-center">
+      <div className="text-4xl mb-3">📊</div>
+      <div className="text-lg font-semibold text-itf-green">No data yet for FY {year}</div>
+      <p className="text-sm text-itf-ink/70 mt-2 max-w-md mx-auto">
+        {hint ?? "This year has no records yet. Sign in to the admin panel to add KRA/KPI, revenue, training and other performance data, or clone from a previous year."}
+      </p>
+    </div>
+  );
+}
+
+export function CompareYearPicker({
+  currentYear, compareYear, onChange, yearsWithData,
+}: { currentYear: number; compareYear: number | null; onChange: (y: number | null) => void; yearsWithData: number[] }) {
+  const options = yearsWithData.filter((y) => y !== currentYear);
+  return (
+    <div className="inline-flex items-center gap-2 text-xs">
+      <span className="text-itf-ink/60 font-semibold uppercase tracking-wider">Compare vs</span>
+      <select
+        value={compareYear ?? ""}
+        onChange={(e) => onChange(e.target.value ? Number(e.target.value) : null)}
+        className="border border-itf-rule rounded px-2 py-1 bg-white"
+      >
+        <option value="">— none —</option>
+        {options.map((y) => <option key={y} value={y}>FY {y}</option>)}
+      </select>
+    </div>
+  );
+}
+
