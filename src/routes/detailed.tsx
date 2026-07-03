@@ -1,8 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
-import { Note, Section, DataTable, PctBar } from "@/components/dashboard/widgets";
+import { Note, Section, DataTable, PctBar, EmptyState } from "@/components/dashboard/widgets";
 import { areaRevenue, trainingCentres, fmtNaira, growth, achievement } from "@/data/itf2024";
 import { useMemo, useState } from "react";
+import { useYear } from "@/lib/year-context";
 
 export const Route = createFileRoute("/detailed")({
   head: () => ({
@@ -17,6 +18,15 @@ export const Route = createFileRoute("/detailed")({
 });
 
 function Detailed() {
+  const { year, hasData } = useYear();
+  if (!hasData(year)) {
+    return (
+      <DashboardLayout title="Detailed Analysis" subtitle={`FY ${year}`}>
+        <EmptyState year={year} hint="No area-office or training-centre data recorded for this year." />
+      </DashboardLayout>
+    );
+  }
+
   const [cat, setCat] = useState<"all" | "A" | "B" | "C">("all");
   const [stream, setStream] = useState<"all" | "Training Contribution" | "Course Fee" | "Other Income">("all");
   const [q, setQ] = useState("");

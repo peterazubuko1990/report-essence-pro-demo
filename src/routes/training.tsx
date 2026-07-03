@@ -1,8 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
-import { Kpi, Note, Section, DataTable, PctBar } from "@/components/dashboard/widgets";
+import { Kpi, Note, Section, DataTable, PctBar, EmptyState } from "@/components/dashboard/widgets";
 import { trainingProgrammes, trainingTotals, staffSchool, adminSupport, growth } from "@/data/itf2024";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend, CartesianGrid, LineChart, Line } from "recharts";
+import { useYear } from "@/lib/year-context";
 
 export const Route = createFileRoute("/training")({
   head: () => ({
@@ -17,6 +18,15 @@ export const Route = createFileRoute("/training")({
 });
 
 function Training() {
+  const { year, hasData } = useYear();
+  if (!hasData(year)) {
+    return (
+      <DashboardLayout title="Training Analysis" subtitle={`FY ${year}`}>
+        <EmptyState year={year} hint="No training data for this year. Add training programmes and staff-school results via the admin panel." />
+      </DashboardLayout>
+    );
+  }
+
   const progChart = trainingProgrammes.map((p) => ({ name: p.programme.replace(/\s*\(.*\)/, "").slice(0,22), "2023": p.p2023 ?? 0, "2024": p.p2024 ?? 0 }));
   const capacity = adminSupport.filter((r) => r.item.startsWith("Capacity Building"));
   const staffChart = staffSchool.map((s) => ({ exam: s.exam, "2023 %": s.pct23, "2024 %": s.pct24 }));
