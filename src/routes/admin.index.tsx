@@ -8,7 +8,8 @@ export const Route = createFileRoute("/admin/")({
   component: AdminHome,
 });
 
-type TableKey = "kra_rows" | "revenue_rows" | "area_revenue" | "training_programmes" | "staff_school" | "hr_metrics" | "challenges" | "way_forward";
+type TableKey = "kra_rows" | "revenue_rows" | "area_revenue" | "training_programmes" | "staff_school" | "hr_metrics" | "challenges" | "way_forward" | "wins" | "presenter_notes";
+const sb = supabase as any;
 
 type FieldDef = { name: string; label: string; type: "text" | "number" | "textarea"; required?: boolean; nullable?: boolean };
 type TableDef = { key: TableKey; label: string; fields: FieldDef[]; order?: string };
@@ -68,6 +69,20 @@ const TABLES: TableDef[] = [
       { name: "text", label: "Recommendation", type: "textarea", required: true },
       { name: "sort_order", label: "Sort", type: "number" },
     ] },
+  { key: "wins", label: "Wins / Achievements", order: "sort_order",
+    fields: [
+      { name: "section", label: "Section (e.g. overview, KRA 1)", type: "text", required: true },
+      { name: "text", label: "Achievement", type: "textarea", required: true },
+      { name: "tone", label: "Tone (good / warn / bad)", type: "text" },
+      { name: "sort_order", label: "Sort", type: "number" },
+    ] },
+  { key: "presenter_notes", label: "Presenter Notes", order: "sort_order",
+    fields: [
+      { name: "section", label: "Section key (matches page section)", type: "text", required: true },
+      { name: "title", label: "Title", type: "text", nullable: true },
+      { name: "body", label: "Body / commentary", type: "textarea", required: true },
+      { name: "sort_order", label: "Sort", type: "number" },
+    ] },
 ];
 
 function AdminHome() {
@@ -84,6 +99,7 @@ function AdminHome() {
     if (error) return alert(error.message);
     setNewYear("");
     qc.invalidateQueries({ queryKey: ["years"] });
+    qc.invalidateQueries({ queryKey: ["years_with_data"] });
     setYear(y);
   };
 
@@ -92,13 +108,13 @@ function AdminHome() {
     if (prev === year) return alert("Select a target year different from the source.");
     if (!confirm(`Clone all data from ${prev} into ${year}? (Existing ${year} rows are kept)`)) return;
     for (const t of TABLES) {
-      const { data } = await supabase.from(t.key).select("*").eq("year", prev);
+      const { data } = await sb.from(t.key).select("*").eq("year", prev);
       if (!data || !data.length) continue;
       const rows = data.map((r: any) => {
         const { id, created_at, updated_at, ...rest } = r;
         return { ...rest, year };
       });
-      await supabase.from(t.key).insert(rows);
+      await sb.from(t.key).insert(rows);
     }
     qc.invalidateQueries();
     alert("Clone complete.");
@@ -149,7 +165,7 @@ function TableEditor({ def, year }: { def: TableDef; year: number }) {
   const query = useQuery({
     queryKey: [def.key, year],
     queryFn: async () => {
-      let q = supabase.from(def.key).select("*").eq("year", year);
+      let q = sb.from(def.key).select("*").eq("year", year);
       if (def.order) q = q.order(def.order);
       const { data, error } = await q;
       if (error) throw error;
@@ -159,11 +175,17 @@ function TableEditor({ def, year }: { def: TableDef; year: number }) {
 
   const rows = query.data ?? [];
 
+  const invalidateAll = () => {
+    qc.invalidateQueries({ queryKey: [def.key, year] });
+    qc.invalidateQueries({ queryKey: [def.key] });
+    qc.invalidateQueries({ queryKey: ["years_with_data"] });
+  };
+
   const remove = async (id: string) => {
     if (!confirm("Delete this row?")) return;
-    const { error } = await supabase.from(def.key).delete().eq("id", id);
+    const { error } = await sb.from(def.key).delete().eq("id", id);
     if (error) return alert(error.message);
-    qc.invalidateQueries({ queryKey: [def.key, year] });
+    invalidateAll();
   };
 
   return (
@@ -209,10 +231,10 @@ function TableEditor({ def, year }: { def: TableDef; year: number }) {
       </div>
 
       {showForm && (
-        <RowForm def={def} year={year} initial={editing} onClose={() => setShowForm(false)} onSaved={() => { setShowForm(false); qc.invalidateQueries({ queryKey: [def.key, year] }); }} />
+        <RowForm def={def} year={year} initial={editing} onClose={() => setShowForm(false)} onSaved={() => { setShowForm(false); invalidateAll(); }} />
       )}
       {csvOpen && (
-        <CsvImport def={def} year={year} onClose={() => setCsvOpen(false)} onDone={() => { setCsvOpen(false); qc.invalidateQueries({ queryKey: [def.key, year] }); }} />
+        <CsvImport def={def} year={year} onClose={() => setCsvOpen(false)} onDone={() => { setCsvOpen(false); invalidateAll(); }} />
       )}
     </div>
   );
@@ -238,8 +260,8 @@ function RowForm({ def, year, initial, onClose, onSaved }: { def: TableDef; year
       payload[f.name] = v;
     });
     const q = initial
-      ? supabase.from(def.key).update(payload).eq("id", initial.id)
-      : supabase.from(def.key).insert(payload);
+      ? sb.from(def.key).update(payload).eq("id", initial.id)
+      : sb.from(def.key).insert(payload);
     const { error } = await q;
     setSaving(false);
     if (error) return setError(error.message);
@@ -307,7 +329,7 @@ function CsvImport({ def, year, onClose, onDone }: { def: TableDef; year: number
         });
         return obj;
       });
-      const { error } = await supabase.from(def.key).insert(rows);
+      const { error } = await sb.from(def.key).insert(rows);
       if (error) throw error;
       onDone();
     } catch (e: any) {

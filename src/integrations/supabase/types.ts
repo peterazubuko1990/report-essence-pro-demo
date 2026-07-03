@@ -166,6 +166,39 @@ export type Database = {
           },
         ]
       }
+      presenter_notes: {
+        Row: {
+          body: string
+          created_at: string
+          id: string
+          section: string
+          sort_order: number
+          title: string | null
+          updated_at: string
+          year: number
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          id?: string
+          section: string
+          sort_order?: number
+          title?: string | null
+          updated_at?: string
+          year: number
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          id?: string
+          section?: string
+          sort_order?: number
+          title?: string | null
+          updated_at?: string
+          year?: number
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
@@ -350,6 +383,39 @@ export type Database = {
             referencedColumns: ["year"]
           },
         ]
+      }
+      wins: {
+        Row: {
+          created_at: string
+          id: string
+          section: string
+          sort_order: number
+          text: string
+          tone: string
+          updated_at: string
+          year: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          section?: string
+          sort_order?: number
+          text: string
+          tone?: string
+          updated_at?: string
+          year: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          section?: string
+          sort_order?: number
+          text?: string
+          tone?: string
+          updated_at?: string
+          year?: number
+        }
+        Relationships: []
       }
       years: {
         Row: {

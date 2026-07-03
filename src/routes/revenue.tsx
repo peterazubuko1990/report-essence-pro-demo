@@ -1,8 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
-import { Kpi, Note, Section, DataTable, PctBar } from "@/components/dashboard/widgets";
+import { Kpi, Note, Section, DataTable, PctBar, EmptyState } from "@/components/dashboard/widgets";
 import { areaRevenue, fmtNaira, growth, achievement, headlineRevenue } from "@/data/itf2024";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend, CartesianGrid, PieChart, Pie, Cell } from "recharts";
+import { useYear } from "@/lib/year-context";
 
 export const Route = createFileRoute("/revenue")({
   head: () => ({
@@ -17,6 +18,15 @@ export const Route = createFileRoute("/revenue")({
 });
 
 function Revenue() {
+  const { year, hasData } = useYear();
+  if (!hasData(year)) {
+    return (
+      <DashboardLayout title="Revenue Analysis" subtitle={`FY ${year}`}>
+        <EmptyState year={year} hint="No revenue records for this year. Add revenue rows / area-office data via the admin panel." />
+      </DashboardLayout>
+    );
+  }
+
   const tc = areaRevenue.filter((r) => r.stream === "Training Contribution");
   const cf = areaRevenue.filter((r) => r.stream === "Course Fee");
   const tcByCat = (["A","B","C"] as const).map((c) => {
