@@ -27,7 +27,7 @@ function useYearRows<T = any>(table: string, year: number, enabled = true) {
     queryKey: [table, year],
     enabled: enabled && year > 0,
     queryFn: async () => {
-      const { data, error } = await supabase.from(table).select("*").eq("year", year);
+      const { data, error } = await (supabase.from as any)(table).select("*").eq("year", year);
       if (error) throw error;
       return (data ?? []) as T[];
     },
