@@ -1,74 +1,91 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
 import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
-import { Note, Section } from "@/components/dashboard/widgets";
-import { challenges, wayForward } from "@/data/itf2024";
+import { Note, Section, EmptyState } from "@/components/dashboard/widgets";
+import { supabase } from "@/integrations/supabase/client";
+import { useYear } from "@/lib/year-context";
 
 export const Route = createFileRoute("/insights")({
-  head: () => ({
-    meta: [
-      { title: "Management Insights · ITF 2024 Scorecard" },
-      { name: "description", content: "Automatically generated key findings, risks and recommendations from the ITF 2024 corporate scorecard." },
-      { property: "og:title", content: "ITF 2024 – Management Insights" },
-      { property: "og:description", content: "Director-level findings, risks and way-forward statements derived from the 2024 Corporate Scorecard." },
-    ],
-  }),
+  head: () => ({ meta: [{ title: "Management Insights · ITF Scorecard" }] }),
   component: Insights,
 });
 
-const findings = [
-  { tag: "Strength", tone: "good", text: "Training Contribution rose ₦6.49 B year-on-year (+11.2%), exceeding target by ₦6.23 B." },
-  { tag: "Strength", tone: "good", text: "Field monitoring activity tripled — Employer Programmes Monitored hit 310.7% of target." },
-  { tag: "Strength", tone: "good", text: "Participants trained jumped from 21,672 to 39,032 (+80.1%) driven by SSIP and the new ITF-NERG programme." },
-  { tag: "Risk", tone: "bad", text: "Other Income collapsed to ₦46.6 M against a ₦856.1 M target — only 5.4% delivered." },
-  { tag: "Risk", tone: "bad", text: "Training-claims processing dropped 50.8% (652 → 321). Operational capacity in claims management needs urgent reinforcement." },
-  { tag: "Risk", tone: "bad", text: "Only 62.8% of registered employers are actively contributing — a leakage of nearly 56,000 employers." },
-  { tag: "Observation", tone: "warn", text: "Four major programmes from 2023 (AgSEP, N-Power, MSDP, Summer Boot Camp) were not implemented in 2024 — programme portfolio narrowed." },
-  { tag: "Observation", tone: "warn", text: "Staff welfare loans (Housing, Motor Vehicle) were not extended in 2024, and short-term capacity building dropped 24%." },
-  { tag: "Observation", tone: "warn", text: "MSTC Abuja and Centre for Excellence under-delivered Course Fee dramatically — 11.4% and 0% respectively." },
-];
+type Row = { id: string; text?: string; body?: string; title?: string | null; section?: string; tone?: string; sort_order: number };
+
+function useYearTable(table: string, year: number) {
+  return useQuery<Row[]>({
+    queryKey: [table, year],
+    enabled: year > 0,
+    queryFn: async () => {
+      const { data, error } = await (supabase.from as any)(table).select("*").eq("year", year).order("sort_order");
+      if (error) throw error;
+      return (data ?? []) as Row[];
+    },
+  });
+}
 
 function Insights() {
+  const { year, hasData } = useYear();
+  const challenges = useYearTable("challenges", year);
+  const wf = useYearTable("way_forward", year);
+  const wins = useYearTable("wins", year);
+  const notes = useYearTable("presenter_notes", year);
+
+  const anyData =
+    (challenges.data?.length ?? 0) + (wf.data?.length ?? 0) + (wins.data?.length ?? 0) + (notes.data?.length ?? 0) > 0;
+
+  if (!hasData(year) && !anyData) {
+    return (
+      <DashboardLayout title="Management Insights" subtitle={`FY ${year}`}>
+        <EmptyState year={year} hint="No insights, wins, challenges or recommendations exist for this year yet." />
+      </DashboardLayout>
+    );
+  }
+
   return (
-    <DashboardLayout title="Management Insights" subtitle="Automatically generated findings, risks and recommendations — supplements the Director's reading of the data.">
-      <Section kicker="Findings" title="Key Findings & Risks">
-        <ul className="space-y-3">
-          {findings.map((f, i) => (
-            <li key={i} className="flex gap-3 text-sm">
-              <span className={`shrink-0 mt-0.5 inline-block px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${
-                f.tone === "good" ? "bg-itf-green text-white" :
-                f.tone === "bad" ? "bg-itf-red text-white" :
-                "bg-itf-gold text-itf-ink"
-              }`}>{f.tag}</span>
-              <span className="leading-relaxed">{f.text}</span>
-            </li>
-          ))}
-        </ul>
-      </Section>
+    <DashboardLayout title="Management Insights" subtitle={`Findings, wins and recommendations for FY ${year}.`}>
+      {(wins.data?.length ?? 0) > 0 && (
+        <Section kicker="Wins" title="Achievements & Highlights">
+          <ul className="space-y-3">
+            {(wins.data ?? []).map((w) => (
+              <li key={w.id} className="flex gap-3 text-sm">
+                <span className={`shrink-0 mt-0.5 inline-block px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${
+                  w.tone === "bad" ? "bg-itf-red text-white" :
+                  w.tone === "warn" ? "bg-itf-gold text-itf-ink" :
+                  "bg-itf-green text-white"
+                }`}>{w.tone === "bad" ? "Risk" : w.tone === "warn" ? "Watch" : "Win"}</span>
+                <span className="leading-relaxed">{w.text}{w.section ? <span className="text-[10px] text-itf-ink/50 ml-2">· {w.section}</span> : null}</span>
+              </li>
+            ))}
+          </ul>
+        </Section>
+      )}
 
       <div className="grid md:grid-cols-2 gap-6">
-        <Section kicker="Challenges" title="Challenges / Constraints of the Fund (verbatim)">
-          <ul className="list-disc pl-5 space-y-2 text-sm">
-            {challenges.map((c) => <li key={c}>{c}</li>)}
-          </ul>
-          <Note>Reproduced from Slide 66 of the source report. These are the constraints recognised by the Corporate Planning Department.</Note>
+        <Section kicker="Challenges" title="Challenges / Constraints">
+          {(challenges.data?.length ?? 0) === 0
+            ? <div className="text-sm text-itf-ink/60">No challenges recorded.</div>
+            : <ul className="list-disc pl-5 space-y-2 text-sm">{(challenges.data ?? []).map((c) => <li key={c.id}>{c.text}</li>)}</ul>}
         </Section>
-        <Section kicker="Way Forward" title="Recommendations / Way Forward (verbatim)">
-          <ul className="list-disc pl-5 space-y-2 text-sm">
-            {wayForward.map((c) => <li key={c}>{c}</li>)}
-          </ul>
-          <Note>Reproduced from Slide 67 of the source report. These recommendations were tabled to Management for 2025 planning.</Note>
+        <Section kicker="Way Forward" title="Recommendations">
+          {(wf.data?.length ?? 0) === 0
+            ? <div className="text-sm text-itf-ink/60">No recommendations recorded.</div>
+            : <ul className="list-disc pl-5 space-y-2 text-sm">{(wf.data ?? []).map((r) => <li key={r.id}>{r.text}</li>)}</ul>}
         </Section>
       </div>
 
-      <Section kicker="Director's Briefing" title="Suggested Talking Points">
-        <ol className="list-decimal pl-5 space-y-2 text-sm leading-relaxed">
-          <li>Open with the Training Contribution result — the headline win and proof that the core mandate continues to deliver above target.</li>
-          <li>Frame the Other Income / Course Fee shortfalls as <i>commercialisation gaps</i> rather than collection failures — they point to a need to revisit pricing and demand at Training Centres.</li>
-          <li>Use the Employers Registered vs Contributing gap (114,391 vs 58,563) to justify additional resources for verification, audit and collection.</li>
-          <li>Highlight Staff School outcomes (WASSCE 100% pass) when motivating the library and ICT-lab investment listed in the Way Forward.</li>
-          <li>Close with the YoY participant growth (+80.1%) to position 2024 as a <i>year of operational scaling</i> despite budget constraints.</li>
-        </ol>
-      </Section>
+      {(notes.data?.length ?? 0) > 0 && (
+        <Section kicker="Commentary" title="Presenter Notes">
+          <div className="space-y-3">
+            {(notes.data ?? []).map((n) => (
+              <Note key={n.id}>
+                {n.title && <b>{n.title}. </b>}
+                {n.body}
+              </Note>
+            ))}
+          </div>
+        </Section>
+      )}
     </DashboardLayout>
   );
 }
