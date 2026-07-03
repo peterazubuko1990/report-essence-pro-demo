@@ -107,13 +107,13 @@ function AdminHome() {
     if (prev === year) return alert("Select a target year different from the source.");
     if (!confirm(`Clone all data from ${prev} into ${year}? (Existing ${year} rows are kept)`)) return;
     for (const t of TABLES) {
-      const { data } = await supabase.from(t.key).select("*").eq("year", prev);
+      const { data } = await sb.from(t.key).select("*").eq("year", prev);
       if (!data || !data.length) continue;
       const rows = data.map((r: any) => {
         const { id, created_at, updated_at, ...rest } = r;
         return { ...rest, year };
       });
-      await supabase.from(t.key).insert(rows);
+      await sb.from(t.key).insert(rows);
     }
     qc.invalidateQueries();
     alert("Clone complete.");
@@ -164,7 +164,7 @@ function TableEditor({ def, year }: { def: TableDef; year: number }) {
   const query = useQuery({
     queryKey: [def.key, year],
     queryFn: async () => {
-      let q = supabase.from(def.key).select("*").eq("year", year);
+      let q = sb.from(def.key).select("*").eq("year", year);
       if (def.order) q = q.order(def.order);
       const { data, error } = await q;
       if (error) throw error;
@@ -176,7 +176,7 @@ function TableEditor({ def, year }: { def: TableDef; year: number }) {
 
   const remove = async (id: string) => {
     if (!confirm("Delete this row?")) return;
-    const { error } = await supabase.from(def.key).delete().eq("id", id);
+    const { error } = await sb.from(def.key).delete().eq("id", id);
     if (error) return alert(error.message);
     qc.invalidateQueries({ queryKey: [def.key, year] });
   };
@@ -253,8 +253,8 @@ function RowForm({ def, year, initial, onClose, onSaved }: { def: TableDef; year
       payload[f.name] = v;
     });
     const q = initial
-      ? supabase.from(def.key).update(payload).eq("id", initial.id)
-      : supabase.from(def.key).insert(payload);
+      ? sb.from(def.key).update(payload).eq("id", initial.id)
+      : sb.from(def.key).insert(payload);
     const { error } = await q;
     setSaving(false);
     if (error) return setError(error.message);
@@ -322,7 +322,7 @@ function CsvImport({ def, year, onClose, onDone }: { def: TableDef; year: number
         });
         return obj;
       });
-      const { error } = await supabase.from(def.key).insert(rows);
+      const { error } = await sb.from(def.key).insert(rows);
       if (error) throw error;
       onDone();
     } catch (e: any) {
