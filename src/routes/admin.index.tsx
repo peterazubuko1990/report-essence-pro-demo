@@ -175,11 +175,17 @@ function TableEditor({ def, year }: { def: TableDef; year: number }) {
 
   const rows = query.data ?? [];
 
+  const invalidateAll = () => {
+    qc.invalidateQueries({ queryKey: [def.key, year] });
+    qc.invalidateQueries({ queryKey: [def.key] });
+    qc.invalidateQueries({ queryKey: ["years_with_data"] });
+  };
+
   const remove = async (id: string) => {
     if (!confirm("Delete this row?")) return;
     const { error } = await sb.from(def.key).delete().eq("id", id);
     if (error) return alert(error.message);
-    qc.invalidateQueries({ queryKey: [def.key, year] });
+    invalidateAll();
   };
 
   return (
@@ -225,10 +231,10 @@ function TableEditor({ def, year }: { def: TableDef; year: number }) {
       </div>
 
       {showForm && (
-        <RowForm def={def} year={year} initial={editing} onClose={() => setShowForm(false)} onSaved={() => { setShowForm(false); qc.invalidateQueries({ queryKey: [def.key, year] }); }} />
+        <RowForm def={def} year={year} initial={editing} onClose={() => setShowForm(false)} onSaved={() => { setShowForm(false); invalidateAll(); }} />
       )}
       {csvOpen && (
-        <CsvImport def={def} year={year} onClose={() => setCsvOpen(false)} onDone={() => { setCsvOpen(false); qc.invalidateQueries({ queryKey: [def.key, year] }); }} />
+        <CsvImport def={def} year={year} onClose={() => setCsvOpen(false)} onDone={() => { setCsvOpen(false); invalidateAll(); }} />
       )}
     </div>
   );
