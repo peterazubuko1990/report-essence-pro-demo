@@ -37,17 +37,17 @@ function AdminLayout() {
   return (
     <div className="min-h-screen bg-itf-canvas text-itf-ink">
       <header className="bg-itf-green text-white border-b-4 border-itf-gold">
-        <div className="flex items-center gap-4 px-6 py-3">
-          <img src={logo.url} className="h-12 w-12 rounded-full bg-white p-0.5" />
-          <div className="flex-1">
-            <div className="text-[11px] tracking-[0.18em] uppercase text-itf-gold/90">Administrator Console</div>
-            <div className="text-lg font-semibold">ITF Corporate Scorecard — Data Management</div>
+        <div className="flex items-center gap-3 px-3 sm:px-6 py-3 flex-wrap">
+          <img src={logo.url} className="h-10 w-10 sm:h-12 sm:w-12 shrink-0 rounded-full bg-white p-0.5" />
+          <div className="flex-1 min-w-0">
+            <div className="text-[10px] sm:text-[11px] tracking-[0.18em] uppercase text-itf-gold/90">Administrator Console</div>
+            <div className="text-sm sm:text-lg font-semibold truncate">ITF Scorecard — Data Management</div>
           </div>
-          <Link to="/" className="text-[11px] rounded bg-white/10 border border-white/20 px-3 py-1.5 hover:bg-white/20">↩ Back to Dashboard</Link>
-          <button onClick={signOut} className="text-[11px] rounded bg-itf-red px-3 py-1.5 font-semibold hover:bg-itf-red/90">Sign out</button>
+          <Link to="/" className="text-[11px] rounded bg-white/10 border border-white/20 px-2 sm:px-3 py-1.5 hover:bg-white/20 whitespace-nowrap">↩ Dashboard</Link>
+          <button onClick={signOut} className="text-[11px] rounded bg-itf-red px-2 sm:px-3 py-1.5 font-semibold hover:bg-itf-red/90 whitespace-nowrap">Sign out</button>
         </div>
       </header>
-      <main className="px-6 py-6 max-w-[1400px] mx-auto"><Outlet /></main>
+      <main className="px-3 sm:px-6 py-4 sm:py-6 max-w-[1400px] mx-auto overflow-x-auto"><Outlet /></main>
     </div>
   );
 }
