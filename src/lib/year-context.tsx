@@ -44,14 +44,17 @@ export function YearProvider({ children }: { children: ReactNode }) {
     queryFn: fetchYearsWithData,
   });
 
-  const [year, setYearState] = useState<number>(() => {
-    if (typeof window === "undefined") return 0;
-    const stored = Number(window.localStorage.getItem("itf.year"));
-    return Number.isFinite(stored) && stored > 0 ? stored : 0;
-  });
+  // Always start at 0 on both server and client to avoid hydration mismatch.
+  // The stored/derived year is applied in the effect after mount.
+  const [year, setYearState] = useState<number>(0);
 
   useEffect(() => {
     if (!years.length) return;
+    const stored = typeof window !== "undefined" ? Number(window.localStorage.getItem("itf.year")) : 0;
+    if (Number.isFinite(stored) && stored > 0 && years.includes(stored)) {
+      if (year !== stored) setYearState(stored);
+      return;
+    }
     if (!year || !years.includes(year)) {
       // Prefer newest year that has data; else newest registered year.
       const target = yearsWithData.length ? yearsWithData[yearsWithData.length - 1] : years[years.length - 1];

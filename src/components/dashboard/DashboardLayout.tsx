@@ -38,14 +38,15 @@ export function DashboardLayout({ children, title, subtitle }: { children: React
             <div className="hidden sm:block text-[11px] text-white/80">Corporate Planning Department · January – December 2024</div>
           </div>
           <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-            <YearSwitcher />
-            <Link to="/admin" className="rounded-md bg-itf-gold text-itf-ink px-2 sm:px-3 py-1.5 text-[11px] font-semibold hover:bg-itf-gold/90">Admin</Link>
+            <div className="hidden sm:block"><YearSwitcher /></div>
+            <Link to="/admin" className="rounded-md bg-itf-gold text-itf-ink px-2 sm:px-3 py-1.5 text-[11px] font-semibold hover:bg-itf-gold/90 whitespace-nowrap">Admin</Link>
             <div className="text-right text-[11px] text-white/80 hidden xl:block">
               <div className="font-semibold text-white">Director-Level Dashboard</div>
               <div>Prepared by ICT · Business Intelligence</div>
             </div>
           </div>
         </div>
+        <div className="flex justify-end px-3 pb-3 sm:hidden"><YearSwitcher /></div>
       </header>
       <div className="flex relative">
 
