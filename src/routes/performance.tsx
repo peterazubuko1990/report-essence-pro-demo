@@ -3,9 +3,9 @@ import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
 import { Section, DataTable, PctBar, EmptyState, CompareYearPicker, Note } from "@/components/dashboard/widgets";
+import { ChartCard, ChartRenderer } from "@/components/dashboard/ChartKit";
 import { supabase } from "@/integrations/supabase/client";
 import { useYear } from "@/lib/year-context";
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend, CartesianGrid } from "recharts";
 
 export const Route = createFileRoute("/performance")({
   head: () => ({ meta: [{ title: "Corporate Performance · ITF Scorecard" }] }),
@@ -48,10 +48,14 @@ function Performance() {
 
   const hasCurrent = curRows.length > 0;
 
-  // Auto-suggest compare year if not chosen: most recent year-with-data that is not `year`
+  // Auto-suggest compare year: prefer the year immediately BEFORE `year`,
+  // else the closest earlier year, else the newest other year.
   const suggestedCompare = useMemo(() => {
     const others = yearsWithData.filter((y) => y !== year);
-    return others.length ? others[others.length - 1] : null;
+    if (!others.length) return null;
+    const earlier = others.filter((y) => y < year).sort((a, b) => b - a);
+    if (earlier.length) return earlier[0];
+    return others[others.length - 1];
   }, [yearsWithData, year]);
 
   const effectiveCompare = compareYear ?? suggestedCompare;
@@ -114,18 +118,19 @@ function Performance() {
             const kraNote = notes.data?.find((n) => n.section === kraName);
             return (
               <Section key={kraName} kicker="KRA" title={kraName}>
-                <div className="h-72 mb-4">
-                  <ResponsiveContainer>
-                    <BarChart data={kraChart(rows)} margin={{ top: 8, right: 16, left: 0, bottom: 30 }}>
-                      <CartesianGrid stroke="#e5e7eb" vertical={false} />
-                      <XAxis dataKey="name" tick={{ fontSize: 11 }} angle={-15} textAnchor="end" />
-                      <YAxis tick={{ fontSize: 11 }} unit="%" />
-                      <Tooltip />
-                      <Legend />
-                      {effectiveCompare && <Bar dataKey={`FY ${effectiveCompare} %`} fill="#7a8a99" />}
-                      <Bar dataKey={`FY ${year} %`} fill="#00723F" />
-                    </BarChart>
-                  </ResponsiveContainer>
+                <div className="mb-4">
+                  <ChartCard title="KPI achievement" defaultKind="bar" allowKinds={["bar","line","area","radar"]}>
+                    {(k) => (
+                      <ChartRenderer
+                        data={kraChart(rows)}
+                        xKey="name"
+                        series={effectiveCompare ? [`FY ${effectiveCompare} %`, `FY ${year} %`] : [`FY ${year} %`]}
+                        kind={k}
+                        unit="%"
+                        seriesColors={effectiveCompare ? ["#7a8a99", "#00723F"] : ["#00723F"]}
+                      />
+                    )}
+                  </ChartCard>
                 </div>
 
                 {subgroups.length > 0

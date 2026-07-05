@@ -31,7 +31,7 @@ function ExecutiveDeck() {
           <div className="mt-6 text-3xl font-bold text-itf-green">Industrial Training Fund</div>
           <div className="text-sm uppercase tracking-[0.25em] text-itf-red mt-2">Federal Government of Nigeria</div>
           <div className="mt-8 text-lg">2024 End-of-Year Corporate Scorecard — Executive Briefing</div>
-          <div className="mt-2 text-sm text-itf-ink/70">Presented by: Suleyol Fred-Chagu, Director, Corporate Planning Department</div>
+          <div className="mt-2 text-sm text-itf-ink/70">Presented by: Mr. Udeme V. Akpabio, Director, Corporate Planning Department</div>
           <div className="mt-1 text-sm text-itf-ink/70">January – December 2024</div>
         </div>
       ),
