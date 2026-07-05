@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as ValidationRouteImport } from './routes/validation'
 import { Route as TrainingRouteImport } from './routes/training'
 import { Route as RevenueRouteImport } from './routes/revenue'
+import { Route as ProjectionsRouteImport } from './routes/projections'
 import { Route as PerformanceRouteImport } from './routes/performance'
 import { Route as InsightsRouteImport } from './routes/insights'
 import { Route as ExecutiveDeckRouteImport } from './routes/executive-deck'
@@ -37,6 +38,11 @@ const TrainingRoute = TrainingRouteImport.update({
 const RevenueRoute = RevenueRouteImport.update({
   id: '/revenue',
   path: '/revenue',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ProjectionsRoute = ProjectionsRouteImport.update({
+  id: '/projections',
+  path: '/projections',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PerformanceRoute = PerformanceRouteImport.update({
@@ -103,6 +109,7 @@ export interface FileRoutesByFullPath {
   '/executive-deck': typeof ExecutiveDeckRoute
   '/insights': typeof InsightsRoute
   '/performance': typeof PerformanceRoute
+  '/projections': typeof ProjectionsRoute
   '/revenue': typeof RevenueRoute
   '/training': typeof TrainingRoute
   '/validation': typeof ValidationRoute
@@ -118,6 +125,7 @@ export interface FileRoutesByTo {
   '/executive-deck': typeof ExecutiveDeckRoute
   '/insights': typeof InsightsRoute
   '/performance': typeof PerformanceRoute
+  '/projections': typeof ProjectionsRoute
   '/revenue': typeof RevenueRoute
   '/training': typeof TrainingRoute
   '/validation': typeof ValidationRoute
@@ -135,6 +143,7 @@ export interface FileRoutesById {
   '/executive-deck': typeof ExecutiveDeckRoute
   '/insights': typeof InsightsRoute
   '/performance': typeof PerformanceRoute
+  '/projections': typeof ProjectionsRoute
   '/revenue': typeof RevenueRoute
   '/training': typeof TrainingRoute
   '/validation': typeof ValidationRoute
@@ -153,6 +162,7 @@ export interface FileRouteTypes {
     | '/executive-deck'
     | '/insights'
     | '/performance'
+    | '/projections'
     | '/revenue'
     | '/training'
     | '/validation'
@@ -168,6 +178,7 @@ export interface FileRouteTypes {
     | '/executive-deck'
     | '/insights'
     | '/performance'
+    | '/projections'
     | '/revenue'
     | '/training'
     | '/validation'
@@ -184,6 +195,7 @@ export interface FileRouteTypes {
     | '/executive-deck'
     | '/insights'
     | '/performance'
+    | '/projections'
     | '/revenue'
     | '/training'
     | '/validation'
@@ -201,6 +213,7 @@ export interface RootRouteChildren {
   ExecutiveDeckRoute: typeof ExecutiveDeckRoute
   InsightsRoute: typeof InsightsRoute
   PerformanceRoute: typeof PerformanceRoute
+  ProjectionsRoute: typeof ProjectionsRoute
   RevenueRoute: typeof RevenueRoute
   TrainingRoute: typeof TrainingRoute
   ValidationRoute: typeof ValidationRoute
@@ -227,6 +240,13 @@ declare module '@tanstack/react-router' {
       path: '/revenue'
       fullPath: '/revenue'
       preLoaderRoute: typeof RevenueRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/projections': {
+      id: '/projections'
+      path: '/projections'
+      fullPath: '/projections'
+      preLoaderRoute: typeof ProjectionsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/performance': {
@@ -333,6 +353,7 @@ const rootRouteChildren: RootRouteChildren = {
   ExecutiveDeckRoute: ExecutiveDeckRoute,
   InsightsRoute: InsightsRoute,
   PerformanceRoute: PerformanceRoute,
+  ProjectionsRoute: ProjectionsRoute,
   RevenueRoute: RevenueRoute,
   TrainingRoute: TrainingRoute,
   ValidationRoute: ValidationRoute,

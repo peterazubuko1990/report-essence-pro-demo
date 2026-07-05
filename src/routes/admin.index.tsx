@@ -3,6 +3,8 @@ import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useYear } from "@/lib/year-context";
+import { toast } from "sonner";
+import { pptxRowsForYear } from "@/data/pptx-seed";
 
 export const Route = createFileRoute("/admin/")({
   component: AdminHome,
@@ -94,30 +96,52 @@ function AdminHome() {
 
   const addYear = async () => {
     const y = parseInt(newYear, 10);
-    if (!y) return;
+    if (!y) return toast.error("Enter a valid year");
     const { error } = await supabase.from("years").insert({ year: y, label: `FY ${y}` });
-    if (error) return alert(error.message);
+    if (error) return toast.error(error.message);
     setNewYear("");
     qc.invalidateQueries({ queryKey: ["years"] });
     qc.invalidateQueries({ queryKey: ["years_with_data"] });
     setYear(y);
+    toast.success(`FY ${y} created`);
   };
 
   const cloneFromPrevious = async () => {
     const prev = years[years.indexOf(year) - 1] ?? years[0];
-    if (prev === year) return alert("Select a target year different from the source.");
+    if (prev === year) return toast.warning("Select a target year different from the source.");
     if (!confirm(`Clone all data from ${prev} into ${year}? (Existing ${year} rows are kept)`)) return;
-    for (const t of TABLES) {
-      const { data } = await sb.from(t.key).select("*").eq("year", prev);
-      if (!data || !data.length) continue;
-      const rows = data.map((r: any) => {
-        const { id, created_at, updated_at, ...rest } = r;
-        return { ...rest, year };
-      });
-      await sb.from(t.key).insert(rows);
+    try {
+      for (const t of TABLES) {
+        const { data } = await sb.from(t.key).select("*").eq("year", prev);
+        if (!data || !data.length) continue;
+        const rows = data.map((r: any) => {
+          const { id, created_at, updated_at, ...rest } = r;
+          return { ...rest, year };
+        });
+        await sb.from(t.key).insert(rows);
+      }
+      qc.invalidateQueries();
+      toast.success(`Cloned data from FY ${prev} to FY ${year}`);
+    } catch (e: any) {
+      toast.error(`Clone failed: ${e.message}`);
     }
-    qc.invalidateQueries();
-    alert("Clone complete.");
+  };
+
+  const loadPptxSample = async () => {
+    if (year !== 2023 && year !== 2024) {
+      return toast.error("Sample data only available for FY 2023 and FY 2024. Switch year first.");
+    }
+    if (!confirm(`Load the full PowerPoint KRA/KPI dataset into FY ${year}?\n\nThis REPLACES existing kra_rows for FY ${year} only.`)) return;
+    try {
+      await sb.from("kra_rows").delete().eq("year", year);
+      const rows = pptxRowsForYear(year as 2023 | 2024);
+      const { error } = await sb.from("kra_rows").insert(rows);
+      if (error) throw error;
+      qc.invalidateQueries();
+      toast.success(`Loaded ${rows.length} KPI rows from PowerPoint for FY ${year}`);
+    } catch (e: any) {
+      toast.error(`Seed failed: ${e.message}`);
+    }
   };
 
   return (
@@ -133,11 +157,14 @@ function AdminHome() {
             </button>
           ))}
         </div>
-        <div className="flex items-center gap-2 ml-auto">
+        <div className="flex items-center gap-2 ml-auto flex-wrap">
           <input type="number" placeholder="Add year (e.g. 2025)" value={newYear} onChange={(e) => setNewYear(e.target.value)}
             className="rounded border border-itf-rule px-3 py-1.5 text-sm w-40" />
           <button onClick={addYear} className="rounded bg-itf-gold px-3 py-1.5 text-xs font-semibold">+ Add Year</button>
           <button onClick={cloneFromPrevious} className="rounded bg-itf-green text-white px-3 py-1.5 text-xs font-semibold">Clone from Previous</button>
+          <button onClick={loadPptxSample} className="rounded bg-itf-red text-white px-3 py-1.5 text-xs font-semibold" title="Load full PowerPoint KRA dataset into current FY (2023/2024 only)">
+            ⤓ Load PPT KRA Data
+          </button>
         </div>
       </div>
 
@@ -184,8 +211,9 @@ function TableEditor({ def, year }: { def: TableDef; year: number }) {
   const remove = async (id: string) => {
     if (!confirm("Delete this row?")) return;
     const { error } = await sb.from(def.key).delete().eq("id", id);
-    if (error) return alert(error.message);
+    if (error) return toast.error(error.message);
     invalidateAll();
+    toast.success("Row deleted");
   };
 
   return (
@@ -264,7 +292,8 @@ function RowForm({ def, year, initial, onClose, onSaved }: { def: TableDef; year
       : sb.from(def.key).insert(payload);
     const { error } = await q;
     setSaving(false);
-    if (error) return setError(error.message);
+    if (error) { setError(error.message); toast.error(error.message); return; }
+    toast.success(initial ? "Row updated" : "Row added");
     onSaved();
   };
 
@@ -331,9 +360,11 @@ function CsvImport({ def, year, onClose, onDone }: { def: TableDef; year: number
       });
       const { error } = await sb.from(def.key).insert(rows);
       if (error) throw error;
+      toast.success(`Imported ${rows.length} row(s)`);
       onDone();
     } catch (e: any) {
       setError(e.message);
+      toast.error(`Import failed: ${e.message}`);
     } finally {
       setBusy(false);
     }
