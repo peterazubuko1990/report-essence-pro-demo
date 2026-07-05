@@ -5,15 +5,16 @@ import { YearSwitcher } from "@/components/dashboard/YearSwitcher";
 import { Menu, X } from "lucide-react";
 
 const nav = [
-  { to: "/", label: "Executive Overview" },
+  { to: "/", label: "Executive Summary" },
+  { to: "/executive-deck", label: "Executive Presentation" },
   { to: "/performance", label: "Corporate Performance" },
-  { to: "/training", label: "Training Analysis" },
   { to: "/revenue", label: "Revenue Analysis" },
+  { to: "/training", label: "Training Analysis" },
+  { to: "/projections", label: "Projections" },
   { to: "/analytics", label: "Visual Analytics" },
   { to: "/detailed", label: "Detailed Analysis" },
   { to: "/insights", label: "Management Insights" },
   { to: "/validation", label: "Data Validation" },
-  { to: "/executive-deck", label: "Executive Presentation" },
 ];
 
 
@@ -34,15 +35,15 @@ export function DashboardLayout({ children, title, subtitle }: { children: React
           <img src={logo.url} alt="ITF Logo" className="h-10 w-10 sm:h-14 sm:w-14 shrink-0 rounded-full bg-white p-0.5 shadow" />
           <div className="flex-1 min-w-0">
             <div className="hidden sm:block text-[11px] tracking-[0.18em] uppercase text-itf-gold/90">Industrial Training Fund · Federal Government of Nigeria</div>
-            <div className="text-sm sm:text-lg font-semibold leading-tight truncate">2024 Corporate Scorecard</div>
-            <div className="hidden sm:block text-[11px] text-white/80">Corporate Planning Department · January – December 2024</div>
+            <div className="text-sm sm:text-lg font-semibold leading-tight truncate">Corporate Scorecard</div>
+            <div className="hidden sm:block text-[11px] text-white/80">Corporate Planning Department</div>
           </div>
           <div className="flex items-center gap-2 sm:gap-3 shrink-0">
             <div className="hidden sm:block"><YearSwitcher /></div>
             <Link to="/admin" className="rounded-md bg-itf-gold text-itf-ink px-2 sm:px-3 py-1.5 text-[11px] font-semibold hover:bg-itf-gold/90 whitespace-nowrap">Admin</Link>
             <div className="text-right text-[11px] text-white/80 hidden xl:block">
               <div className="font-semibold text-white">Director-Level Dashboard</div>
-              <div>Prepared by ICT · Business Intelligence</div>
+              <div>POWERED BY ICTD ITF</div>
             </div>
           </div>
         </div>
@@ -86,7 +87,7 @@ export function DashboardLayout({ children, title, subtitle }: { children: React
             })}
           </nav>
           <div className="px-5 mt-3 pb-6 text-[10px] text-itf-ink/60 leading-relaxed">
-            Source: 2024 End-of-Year Corporate Scorecard PowerPoint, presented by Suleyol Fred-Chagu, Director, Corporate Planning Department.
+            Presented by Mr. Udeme V. Akpabio, Director, Corporate Planning Department.
           </div>
         </aside>
         <main className="flex-1 min-w-0 w-full">
@@ -95,8 +96,9 @@ export function DashboardLayout({ children, title, subtitle }: { children: React
             {subtitle && <p className="text-xs sm:text-sm text-itf-ink/70 mt-1">{subtitle}</p>}
           </div>
           <div className="px-4 sm:px-8 py-4 sm:py-6 space-y-6 overflow-x-hidden">{children}</div>
-          <footer className="px-4 sm:px-8 py-6 text-[11px] text-itf-ink/60 border-t border-itf-rule bg-white">
-            © Industrial Training Fund · 2024 Corporate Scorecard · Internal Management Reporting.
+          <footer className="px-4 sm:px-8 py-6 text-[11px] text-itf-ink/60 border-t border-itf-rule bg-white flex flex-wrap items-center justify-between gap-2">
+            <span>© Industrial Training Fund · Corporate Scorecard · Internal Management Reporting.</span>
+            <span className="font-semibold tracking-[0.15em] text-itf-green">POWERED BY ICTD ITF</span>
           </footer>
         </main>
       </div>
