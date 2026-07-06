@@ -1,7 +1,6 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { useAuth } from "@/lib/auth";
-import logo from "@/assets/itf-logo.asset.json";
 
 export const Route = createFileRoute("/admin/login")({
   head: () => ({ meta: [{ title: "Admin Login · ITF Scorecard" }] }),
@@ -32,7 +31,7 @@ function LoginPage() {
       <div className="hidden lg:flex flex-col justify-between p-12 text-white bg-itf-green relative overflow-hidden">
         <div className="absolute inset-0 opacity-10 bg-[radial-gradient(circle_at_top_right,#D4A017,transparent_60%)]" />
         <div className="relative">
-          <img src={logo.url} className="w-16 h-16 rounded-full bg-white p-1" />
+          <img src='/itf-logo.jpeg' className="w-16 h-16 rounded-full bg-white p-1" />
           <div className="mt-8 text-[11px] tracking-[0.22em] uppercase text-itf-gold">Industrial Training Fund</div>
           <h1 className="mt-2 text-3xl font-bold leading-tight">Corporate Scorecard<br />Administrator Console</h1>
           <p className="mt-4 text-sm text-white/80 max-w-md">
@@ -48,7 +47,7 @@ function LoginPage() {
       <div className="flex items-center justify-center p-6 lg:p-12">
         <div className="w-full max-w-sm bg-white rounded-xl border border-itf-rule shadow-sm p-8">
           <div className="lg:hidden flex items-center gap-3 mb-6">
-            <img src={logo.url} className="w-10 h-10 rounded-full" />
+            <img src='/itf-logo.jpeg' className="w-10 h-10 rounded-full" />
             <div>
               <div className="text-[10px] tracking-widest uppercase text-itf-ink/60">ITF</div>
               <div className="font-semibold text-itf-green">Admin Sign In</div>
