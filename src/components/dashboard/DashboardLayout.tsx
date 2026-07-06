@@ -23,7 +23,7 @@ export function DashboardLayout({ children, title, subtitle }: { children: React
   const [navOpen, setNavOpen] = useState(false);
   return (
     <div className="min-h-screen bg-itf-canvas text-itf-ink">
-      <header className="bg-itf-green text-white border-b-4 border-itf-gold">
+      <header className="bg-itf-green-dark text-white border-b-4 border-itf-red">
         <div className="flex items-center gap-3 px-3 sm:px-6 py-3">
           <button
             onClick={() => setNavOpen((v) => !v)}
