@@ -1,5 +1,4 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import logo from "@/assets/itf-logo.asset.json";
 import { useState, type ReactNode } from "react";
 import { YearSwitcher } from "@/components/dashboard/YearSwitcher";
 import { Menu, X } from "lucide-react";
@@ -32,7 +31,7 @@ export function DashboardLayout({ children, title, subtitle }: { children: React
           >
             {navOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </button>
-          <img src={logo.url} alt="ITF Logo" className="h-10 w-10 sm:h-14 sm:w-14 shrink-0 rounded-full bg-white p-0.5 shadow" />
+          <img src='/itf-logo.jpeg' alt="ITF Logo" className="h-10 w-10 sm:h-14 sm:w-14 shrink-0 rounded-full bg-white p-0.5 shadow" />
           <div className="flex-1 min-w-0">
             <div className="hidden sm:block text-[11px] tracking-[0.18em] uppercase text-white/70">Industrial Training Fund · Federal Government of Nigeria</div>
             <div className="text-sm sm:text-lg font-semibold leading-tight truncate">Corporate Scorecard</div>

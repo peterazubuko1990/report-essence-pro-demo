@@ -1,7 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
 import { Note, Section } from "@/components/dashboard/widgets";
-import logo from "@/assets/itf-logo.asset.json";
 import { headlineRevenue, fmtNaira, growth, trainingTotals, challenges, wayForward, staffSchool } from "@/data/itf2024";
 import { useState } from "react";
 
@@ -27,7 +26,7 @@ function ExecutiveDeck() {
       title: "2024 Corporate Scorecard",
       body: (
         <div className="text-center">
-          <img src={logo.url} alt="ITF logo" className="h-32 w-32 mx-auto rounded-full bg-white p-1 shadow" />
+          <img src='/itf-logo.jpeg' alt="ITF logo" className="h-32 w-32 mx-auto rounded-full bg-white p-1 shadow" />
           <div className="mt-6 text-3xl font-bold text-itf-green">Industrial Training Fund</div>
           <div className="text-sm uppercase tracking-[0.25em] text-itf-red mt-2">Federal Government of Nigeria</div>
           <div className="mt-8 text-lg">2024 End-of-Year Corporate Scorecard — Executive Briefing</div>
@@ -165,7 +164,7 @@ function ExecutiveDeck() {
       title: "Thank you",
       body: (
         <div className="text-center mt-6">
-          <img src={logo.url} alt="ITF logo" className="h-24 w-24 mx-auto rounded-full bg-white p-1 shadow" />
+          <img src='/itf-logo.jpeg' alt="ITF logo" className="h-24 w-24 mx-auto rounded-full bg-white p-1 shadow" />
           <p className="mt-6 text-base max-w-2xl mx-auto leading-relaxed">
             2024 was a challenging year for the Fund, but field officers recorded an impressive performance. Their resilience, commitment, loyalty, teamwork and professionalism is highly commendable.
           </p>
@@ -183,7 +182,7 @@ function ExecutiveDeck() {
     <DashboardLayout title="Executive Presentation" subtitle="A 10-slide condensation of the 69-slide End-of-Year report, preserving ITF corporate identity. Navigate with the buttons below — every slide has its presenter note.">
       <div className="bg-white border border-itf-rule rounded shadow-sm overflow-hidden">
         <div className="bg-itf-green text-white px-5 py-3 flex items-center gap-4">
-          <img src={logo.url} alt="" className="h-9 w-9 rounded-full bg-white p-0.5" />
+          <img src='/itf-logo.jpeg' alt="" className="h-9 w-9 rounded-full bg-white p-0.5" />
           <div className="flex-1">
             <div className="text-[10px] uppercase tracking-[0.18em] text-itf-gold">{s.kicker}</div>
             <div className="text-base font-semibold">{s.title}</div>
