@@ -1,7 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import logo from "@/assets/itf-logo.asset.json";
 
 export const Route = createFileRoute("/admin/reset")({
   component: ResetPage,
@@ -26,7 +25,7 @@ function ResetPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-itf-canvas p-6">
       <div className="w-full max-w-sm bg-white rounded-xl shadow-sm border border-itf-rule p-8">
-        <img src={logo.url} className="w-12 h-12 rounded-full" />
+        <img src='/itf-logo.jpeg' className="w-12 h-12 rounded-full" />
         <h1 className="mt-4 text-lg font-bold text-itf-green">Choose a new password</h1>
         {done ? (
           <p className="mt-3 text-sm text-itf-ink/70">Password updated. Redirecting…</p>

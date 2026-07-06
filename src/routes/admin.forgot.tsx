@@ -1,7 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { useAuth } from "@/lib/auth";
-import logo from "@/assets/itf-logo.asset.json";
 
 export const Route = createFileRoute("/admin/forgot")({
   component: ForgotPage,
@@ -23,7 +22,7 @@ function ForgotPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-itf-canvas p-6">
       <div className="w-full max-w-sm bg-white rounded-xl shadow-sm border border-itf-rule p-8">
-        <img src={logo.url} className="w-12 h-12 rounded-full" />
+        <img src='/itf-logo.jpeg' className="w-12 h-12 rounded-full" />
         <h1 className="mt-4 text-lg font-bold text-itf-green">Reset your password</h1>
         {sent ? (
           <p className="mt-3 text-sm text-itf-ink/70">If an account exists for <b>{email}</b>, a reset link has been sent.</p>
