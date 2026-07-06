@@ -38,7 +38,7 @@ function ExecutiveOverview() {
     queryKey: ["revenue_rows", prevYear],
     enabled: !!prevYear,
     queryFn: async () => {
-      const { data } = await supabase.from("revenue_rows").select("*").eq("year", prevYear).order("sort_order");
+      const { data } = await supabase.from("revenue_rows").select("*").eq("year", prevYear as number).order("sort_order");
       return data ?? [];
     },
   });
