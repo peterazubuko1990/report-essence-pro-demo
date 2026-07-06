@@ -9,7 +9,7 @@ export function YearSwitcher() {
           key={y}
           onClick={() => setYear(y)}
           className={`px-3 py-1 rounded text-[11px] font-semibold tracking-wide transition ${
-            y === year ? "bg-itf-gold text-itf-ink" : "text-white/80 hover:bg-white/10"
+            y === year ? "bg-itf-red text-white" : "text-white/80 hover:bg-white/10"
           }`}
         >
           FY {y}
