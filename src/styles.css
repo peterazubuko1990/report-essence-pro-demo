@@ -106,13 +106,13 @@
   --sidebar-border: oklch(0.929 0.013 255.508);
   --sidebar-ring: oklch(0.704 0.04 256.788);
 
-  /* ITF brand palette – preserve corporate identity (Nigerian flag green/white, red accent, gold) */
-  --itf-green: oklch(0.46 0.13 158);          /* deep ITF green */
-  --itf-green-dark: oklch(0.34 0.10 158);
-  --itf-red: oklch(0.55 0.21 27);             /* ITF red ring */
-  --itf-gold: oklch(0.82 0.16 85);
-  --itf-ink: oklch(0.22 0.02 250);
-  --itf-canvas: oklch(0.975 0.005 240);
+  /* ITF brand palette – red / white / black dominant identity */
+  --itf-green: oklch(0.20 0.01 260);          /* remapped to near-black (kept name for compatibility) */
+  --itf-green-dark: oklch(0.12 0.01 260);     /* pure black */
+  --itf-red: oklch(0.55 0.21 27);             /* ITF red — dominant accent */
+  --itf-gold: oklch(0.78 0.17 60);            /* warm amber, reserved for warn states */
+  --itf-ink: oklch(0.18 0.01 260);
+  --itf-canvas: oklch(0.985 0.003 240);
   --itf-rule: oklch(0.90 0.01 240);
   --itf-blue: oklch(0.55 0.15 250);           /* original Office theme accent */
 }

@@ -36,7 +36,7 @@ function AdminLayout() {
 
   return (
     <div className="min-h-screen bg-itf-canvas text-itf-ink">
-      <header className="bg-itf-green text-white border-b-4 border-itf-gold">
+      <header className="bg-itf-green-dark text-white border-b-4 border-itf-red">
         <div className="flex items-center gap-3 px-3 sm:px-6 py-3 flex-wrap">
           <img src={logo.url} className="h-10 w-10 sm:h-12 sm:w-12 shrink-0 rounded-full bg-white p-0.5" />
           <div className="flex-1 min-w-0">

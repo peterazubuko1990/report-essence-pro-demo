@@ -23,7 +23,7 @@ export function DashboardLayout({ children, title, subtitle }: { children: React
   const [navOpen, setNavOpen] = useState(false);
   return (
     <div className="min-h-screen bg-itf-canvas text-itf-ink">
-      <header className="bg-itf-green text-white border-b-4 border-itf-gold">
+      <header className="bg-itf-green-dark text-white border-b-4 border-itf-red">
         <div className="flex items-center gap-3 px-3 sm:px-6 py-3">
           <button
             onClick={() => setNavOpen((v) => !v)}
@@ -40,7 +40,7 @@ export function DashboardLayout({ children, title, subtitle }: { children: React
           </div>
           <div className="flex items-center gap-2 sm:gap-3 shrink-0">
             <div className="hidden sm:block"><YearSwitcher /></div>
-            <Link to="/admin" className="rounded-md bg-itf-gold text-itf-ink px-2 sm:px-3 py-1.5 text-[11px] font-semibold hover:bg-itf-gold/90 whitespace-nowrap">Admin</Link>
+            <Link to="/admin" className="rounded-md bg-itf-red text-white px-2 sm:px-3 py-1.5 text-[11px] font-semibold hover:bg-itf-red/90 whitespace-nowrap">Admin</Link>
             <div className="text-right text-[11px] text-white/80 hidden xl:block">
               <div className="font-semibold text-white">Director-Level Dashboard</div>
               <div>POWERED BY ICTD ITF</div>
