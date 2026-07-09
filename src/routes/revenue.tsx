@@ -70,7 +70,7 @@ function Revenue() {
               </PieChart>
             </ResponsiveContainer>
           </div>
-          <Note>Training Contribution makes up roughly 98% of total revenue. The Fund's revenue base is heavily concentrated and remains structurally dependent on the 1% mandatory levy.</Note>
+          <Note>Training Contribution makes up roughly 98% of total revenue. The Fund's revenue base is heavily concentrated and remains structurally dependent on the 1% mandatory training contribution.</Note>
         </Section>
         <Section kicker="By Category" title="Training Contribution by Office Category (₦ Billions)">
           <div className="h-72">
