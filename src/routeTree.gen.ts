@@ -13,14 +13,15 @@ import { Route as ValidationRouteImport } from './routes/validation'
 import { Route as TrainingRouteImport } from './routes/training'
 import { Route as RevenueRouteImport } from './routes/revenue'
 import { Route as ProjectionsRouteImport } from './routes/projections'
-import { Route as PerformanceRouteImport } from './routes/performance'
 import { Route as InsightsRouteImport } from './routes/insights'
 import { Route as ExecutiveDeckRouteImport } from './routes/executive-deck'
 import { Route as DetailedRouteImport } from './routes/detailed'
 import { Route as AnalyticsRouteImport } from './routes/analytics'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as PerformanceIndexRouteImport } from './routes/performance/index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
+import { Route as PerformanceKraRouteImport } from './routes/performance/$kra'
 import { Route as AdminResetRouteImport } from './routes/admin.reset'
 import { Route as AdminLoginRouteImport } from './routes/admin.login'
 import { Route as AdminForgotRouteImport } from './routes/admin.forgot'
@@ -43,11 +44,6 @@ const RevenueRoute = RevenueRouteImport.update({
 const ProjectionsRoute = ProjectionsRouteImport.update({
   id: '/projections',
   path: '/projections',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const PerformanceRoute = PerformanceRouteImport.update({
-  id: '/performance',
-  path: '/performance',
   getParentRoute: () => rootRouteImport,
 } as any)
 const InsightsRoute = InsightsRouteImport.update({
@@ -80,10 +76,20 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PerformanceIndexRoute = PerformanceIndexRouteImport.update({
+  id: '/performance/',
+  path: '/performance/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminIndexRoute = AdminIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => AdminRoute,
+} as any)
+const PerformanceKraRoute = PerformanceKraRouteImport.update({
+  id: '/performance/$kra',
+  path: '/performance/$kra',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const AdminResetRoute = AdminResetRouteImport.update({
   id: '/reset',
@@ -108,7 +114,6 @@ export interface FileRoutesByFullPath {
   '/detailed': typeof DetailedRoute
   '/executive-deck': typeof ExecutiveDeckRoute
   '/insights': typeof InsightsRoute
-  '/performance': typeof PerformanceRoute
   '/projections': typeof ProjectionsRoute
   '/revenue': typeof RevenueRoute
   '/training': typeof TrainingRoute
@@ -116,7 +121,9 @@ export interface FileRoutesByFullPath {
   '/admin/forgot': typeof AdminForgotRoute
   '/admin/login': typeof AdminLoginRoute
   '/admin/reset': typeof AdminResetRoute
+  '/performance/$kra': typeof PerformanceKraRoute
   '/admin/': typeof AdminIndexRoute
+  '/performance/': typeof PerformanceIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -124,7 +131,6 @@ export interface FileRoutesByTo {
   '/detailed': typeof DetailedRoute
   '/executive-deck': typeof ExecutiveDeckRoute
   '/insights': typeof InsightsRoute
-  '/performance': typeof PerformanceRoute
   '/projections': typeof ProjectionsRoute
   '/revenue': typeof RevenueRoute
   '/training': typeof TrainingRoute
@@ -132,7 +138,9 @@ export interface FileRoutesByTo {
   '/admin/forgot': typeof AdminForgotRoute
   '/admin/login': typeof AdminLoginRoute
   '/admin/reset': typeof AdminResetRoute
+  '/performance/$kra': typeof PerformanceKraRoute
   '/admin': typeof AdminIndexRoute
+  '/performance': typeof PerformanceIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -142,7 +150,6 @@ export interface FileRoutesById {
   '/detailed': typeof DetailedRoute
   '/executive-deck': typeof ExecutiveDeckRoute
   '/insights': typeof InsightsRoute
-  '/performance': typeof PerformanceRoute
   '/projections': typeof ProjectionsRoute
   '/revenue': typeof RevenueRoute
   '/training': typeof TrainingRoute
@@ -150,7 +157,9 @@ export interface FileRoutesById {
   '/admin/forgot': typeof AdminForgotRoute
   '/admin/login': typeof AdminLoginRoute
   '/admin/reset': typeof AdminResetRoute
+  '/performance/$kra': typeof PerformanceKraRoute
   '/admin/': typeof AdminIndexRoute
+  '/performance/': typeof PerformanceIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -161,7 +170,6 @@ export interface FileRouteTypes {
     | '/detailed'
     | '/executive-deck'
     | '/insights'
-    | '/performance'
     | '/projections'
     | '/revenue'
     | '/training'
@@ -169,7 +177,9 @@ export interface FileRouteTypes {
     | '/admin/forgot'
     | '/admin/login'
     | '/admin/reset'
+    | '/performance/$kra'
     | '/admin/'
+    | '/performance/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -177,7 +187,6 @@ export interface FileRouteTypes {
     | '/detailed'
     | '/executive-deck'
     | '/insights'
-    | '/performance'
     | '/projections'
     | '/revenue'
     | '/training'
@@ -185,7 +194,9 @@ export interface FileRouteTypes {
     | '/admin/forgot'
     | '/admin/login'
     | '/admin/reset'
+    | '/performance/$kra'
     | '/admin'
+    | '/performance'
   id:
     | '__root__'
     | '/'
@@ -194,7 +205,6 @@ export interface FileRouteTypes {
     | '/detailed'
     | '/executive-deck'
     | '/insights'
-    | '/performance'
     | '/projections'
     | '/revenue'
     | '/training'
@@ -202,7 +212,9 @@ export interface FileRouteTypes {
     | '/admin/forgot'
     | '/admin/login'
     | '/admin/reset'
+    | '/performance/$kra'
     | '/admin/'
+    | '/performance/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -212,11 +224,12 @@ export interface RootRouteChildren {
   DetailedRoute: typeof DetailedRoute
   ExecutiveDeckRoute: typeof ExecutiveDeckRoute
   InsightsRoute: typeof InsightsRoute
-  PerformanceRoute: typeof PerformanceRoute
   ProjectionsRoute: typeof ProjectionsRoute
   RevenueRoute: typeof RevenueRoute
   TrainingRoute: typeof TrainingRoute
   ValidationRoute: typeof ValidationRoute
+  PerformanceKraRoute: typeof PerformanceKraRoute
+  PerformanceIndexRoute: typeof PerformanceIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -247,13 +260,6 @@ declare module '@tanstack/react-router' {
       path: '/projections'
       fullPath: '/projections'
       preLoaderRoute: typeof ProjectionsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/performance': {
-      id: '/performance'
-      path: '/performance'
-      fullPath: '/performance'
-      preLoaderRoute: typeof PerformanceRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/insights': {
@@ -298,12 +304,26 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/performance/': {
+      id: '/performance/'
+      path: '/performance'
+      fullPath: '/performance/'
+      preLoaderRoute: typeof PerformanceIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin/': {
       id: '/admin/'
       path: '/'
       fullPath: '/admin/'
       preLoaderRoute: typeof AdminIndexRouteImport
       parentRoute: typeof AdminRoute
+    }
+    '/performance/$kra': {
+      id: '/performance/$kra'
+      path: '/performance/$kra'
+      fullPath: '/performance/$kra'
+      preLoaderRoute: typeof PerformanceKraRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/admin/reset': {
       id: '/admin/reset'
@@ -352,11 +372,12 @@ const rootRouteChildren: RootRouteChildren = {
   DetailedRoute: DetailedRoute,
   ExecutiveDeckRoute: ExecutiveDeckRoute,
   InsightsRoute: InsightsRoute,
-  PerformanceRoute: PerformanceRoute,
   ProjectionsRoute: ProjectionsRoute,
   RevenueRoute: RevenueRoute,
   TrainingRoute: TrainingRoute,
   ValidationRoute: ValidationRoute,
+  PerformanceKraRoute: PerformanceKraRoute,
+  PerformanceIndexRoute: PerformanceIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

@@ -151,20 +151,30 @@ export function Note({ children }: { children: ReactNode }) {
 }
 
 export function DataTable({
-  headers, rows,
-}: { headers: string[]; rows: (string | number | ReactNode)[][] }) {
+  headers,
+  rows,
+  className = "",
+}: { headers: string[]; rows: (string | number | ReactNode)[][]; className?: string }) {
   return (
-    <div className="overflow-x-auto">
-      <table className="w-full text-sm border-collapse">
+    <div className={`overflow-x-auto ${className}`}>
+      <table className="min-w-full text-sm border-separate border-spacing-0">
         <thead>
           <tr className="bg-itf-green text-white">
-            {headers.map((h) => <th key={h} className="px-3 py-2 text-left font-semibold text-[12px] tracking-wide">{h}</th>)}
+            {headers.map((h) => (
+              <th key={h} className="px-4 py-3 text-left font-semibold text-[12px] uppercase tracking-[0.12em]">
+                {h}
+              </th>
+            ))}
           </tr>
         </thead>
         <tbody>
           {rows.map((r, i) => (
             <tr key={i} className={i % 2 ? "bg-itf-canvas" : "bg-white"}>
-              {r.map((c, j) => <td key={j} className="px-3 py-2 border-b border-itf-rule align-top">{c}</td>)}
+              {r.map((c, j) => (
+                <td key={j} className="px-4 py-3 align-top border-b border-itf-rule text-itf-ink/80">
+                  {c}
+                </td>
+              ))}
             </tr>
           ))}
         </tbody>
