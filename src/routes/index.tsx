@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
-import { Kpi, Note, Section, DataTable, PctBar, EmptyState } from "@/components/dashboard/widgets";
+import { Kpi, EnhancedKpi, Note, Section, DataTable, PctBar, EmptyState } from "@/components/dashboard/widgets";
 import { ChartCard, ChartRenderer } from "@/components/dashboard/ChartKit";
 import { fmtNaira, growth } from "@/data/itf2024";
 import { useYear } from "@/lib/year-context";
@@ -60,6 +60,15 @@ function ExecutiveOverview() {
     },
   });
 
+  const { data: kraPrev = [] } = useQuery({
+    queryKey: ["kra_rows", prevYear],
+    enabled: !!prevYear,
+    queryFn: async () => {
+      const { data } = await supabase.from("kra_rows").select("*").eq("year", prevYear as number);
+      return data ?? [];
+    },
+  });
+
   if (!year || !hasData(year)) {
     return (
       <DashboardLayout title="Executive Overview" subtitle={year ? `FY ${year}` : "Loading…"}>
@@ -109,24 +118,107 @@ function ExecutiveOverview() {
       subtitle={prevYear ? `One-page snapshot for FY ${year} with FY ${prevYear} comparisons.` : `One-page snapshot for FY ${year}.`}
     >
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Kpi
+        {/* Total Revenue */}
+        <EnhancedKpi
           label={`Total Revenue ${year}`}
-          value={fmtNaira(totalRevCur)}
-          sub={totalGrowth !== null ? `${totalGrowth >= 0 ? "+" : ""}${totalGrowth.toFixed(1)}% vs ${prevYear}` : `${totalPct.toFixed(1)}% of target`}
+          currentValue={totalRevCur}
+          previousValue={prevYear ? totalRevPrev : undefined}
+          currentYear={year}
+          previousYear={prevYear}
+          formatValue={fmtNaira}
           tone={totalGrowth === null ? "neutral" : totalGrowth >= 0 ? "good" : "bad"}
         />
-        {tc && <Kpi label="Training Contribution" value={fmtNaira(Number(tc.actual))} sub={`${Number(tc.pct ?? 0).toFixed(1)}% of target`} tone={kpiTone(Number(tc.pct ?? 0))} />}
-        {cf && <Kpi label="Course Fee" value={fmtNaira(Number(cf.actual))} sub={`${Number(cf.pct ?? 0).toFixed(1)}% of target`} tone={kpiTone(Number(cf.pct ?? 0))} />}
-        {oi && <Kpi label="Other Income" value={fmtNaira(Number(oi.actual))} sub={`${Number(oi.pct ?? 0).toFixed(1)}% of target`} tone={kpiTone(Number(oi.pct ?? 0))} />}
-        <Kpi
+
+        {/* Training Contribution */}
+        {tc && (
+          <EnhancedKpi
+            label="Training Contribution"
+            currentValue={Number(tc.actual)}
+            previousValue={prevYear ? Number(streamOf("Training Contribution", revPrev)?.actual || 0) : undefined}
+            currentYear={year}
+            previousYear={prevYear}
+            formatValue={fmtNaira}
+            showTarget={true}
+            targetValue={`${Number(tc.pct ?? 0).toFixed(1)}% of target`}
+            tone={kpiTone(Number(tc.pct ?? 0))}
+          />
+        )}
+
+        {/* Course Fee */}
+        {cf && (
+          <EnhancedKpi
+            label="Course Fee"
+            currentValue={Number(cf.actual)}
+            previousValue={prevYear ? Number(streamOf("Course Fee", revPrev)?.actual || 0) : undefined}
+            currentYear={year}
+            previousYear={prevYear}
+            formatValue={fmtNaira}
+            showTarget={true}
+            targetValue={`${Number(cf.pct ?? 0).toFixed(1)}% of target`}
+            tone={kpiTone(Number(cf.pct ?? 0))}
+          />
+        )}
+
+        {/* Other Income */}
+        {oi && (
+          <EnhancedKpi
+            label="Other Income"
+            currentValue={Number(oi.actual)}
+            previousValue={prevYear ? Number(streamOf("Other Income", revPrev)?.actual || 0) : undefined}
+            currentYear={year}
+            previousYear={prevYear}
+            formatValue={fmtNaira}
+            showTarget={true}
+            targetValue={`${Number(oi.pct ?? 0).toFixed(1)}% of target`}
+            tone={kpiTone(Number(oi.pct ?? 0))}
+          />
+        )}
+
+        {/* Participants Trained */}
+        <EnhancedKpi
           label="Participants Trained"
-          value={pTrainedCur.toLocaleString()}
-          sub={prevYear && pTrainedPrev > 0 ? `${growth(pTrainedCur, pTrainedPrev) >= 0 ? "+" : ""}${growth(pTrainedCur, pTrainedPrev).toFixed(1)}% vs ${prevYear}` : "No prior-year data"}
+          currentValue={pTrainedCur}
+          previousValue={prevYear && pTrainedPrev > 0 ? pTrainedPrev : undefined}
+          currentYear={year}
+          previousYear={prevYear}
+          formatValue={(v) => v.toLocaleString()}
           tone={prevYear && pTrainedPrev > 0 ? (growth(pTrainedCur, pTrainedPrev) >= 0 ? "good" : "bad") : "neutral"}
         />
-        <Kpi label="KRAs Reported" value={String(kraRows.length)} sub={`FY ${year}`} tone="neutral" />
-        <Kpi label="Revenue Streams" value={String(revCurrent.length)} sub={`FY ${year}`} tone="neutral" />
-        <Kpi label="Target Achievement" value={`${totalPct.toFixed(1)}%`} sub="Actual ÷ Target" tone={kpiTone(totalPct)} />
+
+        {/* KRAs Reported */}
+        <EnhancedKpi
+          label="KRAs Reported"
+          currentValue={kraRows.length}
+          previousValue={prevYear ? kraPrev.length : undefined}
+          currentYear={year}
+          previousYear={prevYear}
+          formatValue={(v) => String(v)}
+          isPositiveGood={true}
+          tone={prevYear && kraPrev.length > 0 ? (kraRows.length >= kraPrev.length ? "good" : "warn") : "neutral"}
+        />
+
+        {/* Revenue Streams */}
+        <EnhancedKpi
+          label="Revenue Streams"
+          currentValue={revCurrent.length}
+          previousValue={prevYear ? revPrev.length : undefined}
+          currentYear={year}
+          previousYear={prevYear}
+          formatValue={(v) => String(v)}
+          isPositiveGood={true}
+          tone={prevYear && revPrev.length > 0 ? (revCurrent.length >= revPrev.length ? "good" : "warn") : "neutral"}
+        />
+
+        {/* Target Achievement */}
+        <EnhancedKpi
+          label="Target Achievement"
+          currentValue={totalPct}
+          previousValue={prevYear ? (sumTarget(revPrev) > 0 ? (totalRevPrev / sumTarget(revPrev)) * 100 : 0) : undefined}
+          currentYear={year}
+          previousYear={prevYear}
+          formatValue={(v) => `${v.toFixed(1)}%`}
+          tone={kpiTone(totalPct)}
+        />
       </div>
 
       {revChart.length > 0 && (
