@@ -118,6 +118,41 @@ function isKraRowInScope(kra: string | null | undefined, mode?: KRAImportMode) {
   return number !== null && number >= 1 && number <= 4;
 }
 
+function escapeCsv(value: unknown) {
+  const text = value == null ? "" : String(value);
+  const escaped = text.replace(/"/g, '""');
+  return /[",\r\n]/.test(escaped) ? `"${escaped}"` : escaped;
+}
+
+async function fetchLatestKraRowsForMode(mode: KRAImportMode) {
+  const { data, error } = await sb.from("kra_rows")
+    .select("year,kra,subgroup,kpi,sort_order")
+    .order("year", { ascending: false })
+    .order("sort_order", { ascending: true });
+  if (error) throw error;
+
+  const byYear = new Map<number, Array<{ year: number; kra: string | null; subgroup: string | null; kpi: string | null; sort_order: number | null }>>();
+  for (const row of data ?? []) {
+    if (!isKraRowInScope(row.kra, mode)) continue;
+    const rows = byYear.get(row.year) ?? [];
+    rows.push(row);
+    byYear.set(row.year, rows);
+  }
+
+  let bestYear: number | null = null;
+  let bestCount = 0;
+  for (const [year, rows] of byYear.entries()) {
+    if (rows.length > bestCount || (rows.length === bestCount && year > (bestYear ?? 0))) {
+      bestCount = rows.length;
+      bestYear = year;
+    }
+  }
+
+  const rows = bestYear != null ? byYear.get(bestYear)! : [];
+  rows.sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
+  return { year: bestYear, rows };
+}
+
 function AdminHome() {
   const { year, years, setYear } = useYear();
   const [active, setActive] = useState<TableKey>("kra_rows");
@@ -270,15 +305,34 @@ function TableEditor({ def, year }: { def: TableDef; year: number }) {
     toast.success(`Deleted ${selectedIds.length} row(s)`);
   };
 
-  const downloadTemplate = () => {
+  const downloadTemplate = async () => {
     if (def.key !== "kra_rows") return;
     const fields = getKraFormFields(def, kraImportMode);
     const header = fields.map((f) => f.name).join(",");
-    const sampleValues = kraImportMode === "metric"
-      ? ["KRA 5", "Subgroup example", "Sample KPI", "120", "1"]
-      : ["KRA 1", "Subgroup example", "Sample KPI", "100", "120", "120", "1"];
-    const rows = [header, sampleValues.join(",")].join("\n");
-    const blob = new Blob([rows], { type: "text/csv;charset=utf-8;" });
+
+    let templateRows: Array<Record<string, unknown>> = [];
+    try {
+      const result = await fetchLatestKraRowsForMode(kraImportMode);
+      templateRows = result.rows;
+    } catch (error: any) {
+      console.error("Failed to fetch previous KRA rows for template", error);
+      templateRows = [];
+    }
+
+    const csvLines = [header];
+    for (const row of templateRows) {
+      const values = fields.map((f) => {
+        if (f.name === "kra") return escapeCsv(row.kra);
+        if (f.name === "subgroup") return escapeCsv(row.subgroup);
+        if (f.name === "kpi") return escapeCsv(row.kpi);
+        if (f.name === "sort_order") return escapeCsv(row.sort_order);
+        return "";
+      });
+      csvLines.push(values.join(","));
+    }
+
+    const csv = csvLines.join("\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
