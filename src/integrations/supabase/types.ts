@@ -122,13 +122,10 @@ export type Database = {
       kra_rows: {
         Row: {
           actual: number
-          comparison_type: string | null
-          current_value: number | null
           id: string
           kpi: string
           kra: string
           pct: number
-          previous_value: number | null
           sort_order: number
           subgroup: string | null
           target: number
@@ -137,13 +134,10 @@ export type Database = {
         }
         Insert: {
           actual?: number
-          comparison_type?: string | null
-          current_value?: number | null
           id?: string
           kpi: string
           kra: string
           pct?: number
-          previous_value?: number | null
           sort_order?: number
           subgroup?: string | null
           target?: number
@@ -152,13 +146,10 @@ export type Database = {
         }
         Update: {
           actual?: number
-          comparison_type?: string | null
-          current_value?: number | null
           id?: string
           kpi?: string
           kra?: string
           pct?: number
-          previous_value?: number | null
           sort_order?: number
           subgroup?: string | null
           target?: number
