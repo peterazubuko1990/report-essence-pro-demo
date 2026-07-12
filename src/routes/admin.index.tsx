@@ -11,6 +11,7 @@ export const Route = createFileRoute("/admin/")({
 });
 
 type TableKey = "kra_rows" | "revenue_rows" | "area_revenue" | "training_programmes" | "staff_school" | "hr_metrics" | "challenges" | "way_forward" | "wins" | "presenter_notes";
+type KRAImportMode = "comparison" | "metric";
 const sb = supabase as any;
 
 type FieldDef = { name: string; label: string; type: "text" | "number" | "textarea"; required?: boolean; nullable?: boolean };
@@ -86,6 +87,36 @@ const TABLES: TableDef[] = [
       { name: "sort_order", label: "Sort", type: "number" },
     ] },
 ];
+
+function getKraFormFields(def: TableDef, mode?: KRAImportMode): FieldDef[] {
+  if (def.key !== "kra_rows") return def.fields;
+  if (mode === "metric") {
+    return [
+      { name: "kra", label: "KRA", type: "text", required: true },
+      { name: "subgroup", label: "Subgroup", type: "text", nullable: true },
+      { name: "kpi", label: "KPI", type: "text", required: true },
+      { name: "actual", label: "Value", type: "number", nullable: true },
+      { name: "sort_order", label: "Sort", type: "number" },
+    ];
+  }
+  return [
+    { name: "kra", label: "KRA", type: "text", required: true },
+    { name: "subgroup", label: "Subgroup", type: "text", nullable: true },
+    { name: "kpi", label: "KPI", type: "text", required: true },
+    { name: "target", label: "Target", type: "number", required: true },
+    { name: "actual", label: "Actual", type: "number", required: true },
+    { name: "pct", label: "% Achieved", type: "number", required: true },
+    { name: "sort_order", label: "Sort", type: "number" },
+  ];
+}
+
+function isKraRowInScope(kra: string | null | undefined, mode?: KRAImportMode) {
+  if (!kra || !mode) return true;
+  const match = String(kra).match(/KRA\s*(\d+)/i);
+  const number = match ? Number(match[1]) : null;
+  if (mode === "metric") return number !== null && number >= 5 && number <= 7;
+  return number !== null && number >= 1 && number <= 4;
+}
 
 function AdminHome() {
   const { year, years, setYear } = useYear();
@@ -188,6 +219,8 @@ function TableEditor({ def, year }: { def: TableDef; year: number }) {
   const [editing, setEditing] = useState<any | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [csvOpen, setCsvOpen] = useState(false);
+  const [kraImportMode, setKraImportMode] = useState<KRAImportMode>("comparison");
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
   const query = useQuery({
     queryKey: [def.key, year],
@@ -200,7 +233,11 @@ function TableEditor({ def, year }: { def: TableDef; year: number }) {
     },
   });
 
-  const rows = query.data ?? [];
+  const allRows = query.data ?? [];
+  const rows = def.key === "kra_rows"
+    ? allRows.filter((row: any) => isKraRowInScope(row.kra, def.key === "kra_rows" ? kraImportMode : undefined))
+    : allRows;
+  const visibleFields = getKraFormFields(def, def.key === "kra_rows" ? kraImportMode : undefined);
 
   const invalidateAll = () => {
     qc.invalidateQueries({ queryKey: [def.key, year] });
@@ -208,12 +245,46 @@ function TableEditor({ def, year }: { def: TableDef; year: number }) {
     qc.invalidateQueries({ queryKey: ["years_with_data"] });
   };
 
+  const toggleSelect = (id: string) => {
+    setSelectedIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+  };
+
+  const clearSelection = () => setSelectedIds([]);
+
   const remove = async (id: string) => {
     if (!confirm("Delete this row?")) return;
     const { error } = await sb.from(def.key).delete().eq("id", id);
     if (error) return toast.error(error.message);
     invalidateAll();
+    setSelectedIds((prev) => prev.filter((x) => x !== id));
     toast.success("Row deleted");
+  };
+
+  const removeSelected = async () => {
+    if (!selectedIds.length) return;
+    if (!confirm(`Delete ${selectedIds.length} selected row(s)?`)) return;
+    const { error } = await sb.from(def.key).delete().in("id", selectedIds);
+    if (error) return toast.error(error.message);
+    invalidateAll();
+    setSelectedIds([]);
+    toast.success(`Deleted ${selectedIds.length} row(s)`);
+  };
+
+  const downloadTemplate = () => {
+    if (def.key !== "kra_rows") return;
+    const fields = getKraFormFields(def, kraImportMode);
+    const header = fields.map((f) => f.name).join(",");
+    const sampleValues = kraImportMode === "metric"
+      ? ["KRA 5", "Subgroup example", "Sample KPI", "120", "1"]
+      : ["KRA 1", "Subgroup example", "Sample KPI", "100", "120", "120", "1"];
+    const rows = [header, sampleValues.join(",")].join("\n");
+    const blob = new Blob([rows], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = kraImportMode === "metric" ? "kra-5-7-template.csv" : "kra-1-4-template.csv";
+    link.click();
+    URL.revokeObjectURL(url);
   };
 
   return (
@@ -223,7 +294,23 @@ function TableEditor({ def, year }: { def: TableDef; year: number }) {
           <h2 className="font-semibold text-itf-green">{def.label}</h2>
           <p className="text-[11px] text-itf-ink/60">FY {year} · {rows.length} row(s)</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          {def.key === "kra_rows" && (
+            <div className="flex items-center gap-1 rounded border border-itf-rule bg-itf-canvas px-2 py-1">
+              <button onClick={() => setKraImportMode("comparison")} className={`rounded px-2 py-1 text-[11px] font-semibold ${kraImportMode === "comparison" ? "bg-itf-green text-white" : "text-itf-ink/70"}`}>
+                KRA 1–4 comparison
+              </button>
+              <button onClick={() => setKraImportMode("metric")} className={`rounded px-2 py-1 text-[11px] font-semibold ${kraImportMode === "metric" ? "bg-itf-green text-white" : "text-itf-ink/70"}`}>
+                KRA 5–7 metric
+              </button>
+            </div>
+          )}
+          {def.key === "kra_rows" && (
+            <>
+              <button onClick={downloadTemplate} className="rounded border border-itf-rule px-3 py-1.5 text-xs font-medium hover:bg-itf-canvas">↓ Download Template</button>
+              <button onClick={removeSelected} disabled={!selectedIds.length} className="rounded border border-itf-red/40 px-3 py-1.5 text-xs font-medium text-itf-red hover:bg-itf-red/5 disabled:opacity-50">🗑 Delete Selected</button>
+            </>
+          )}
           <button onClick={() => setCsvOpen(true)} className="rounded border border-itf-rule px-3 py-1.5 text-xs font-medium hover:bg-itf-canvas">↑ Import CSV</button>
           <button onClick={() => { setEditing(null); setShowForm(true); }} className="rounded bg-itf-green text-white px-3 py-1.5 text-xs font-semibold">+ Add Row</button>
         </div>
@@ -233,15 +320,28 @@ function TableEditor({ def, year }: { def: TableDef; year: number }) {
         <table className="w-full text-sm">
           <thead className="bg-itf-canvas text-[11px] uppercase tracking-wider text-itf-ink/60">
             <tr>
-              {def.fields.map((f) => <th key={f.name} className="px-3 py-2 text-left font-medium">{f.label}</th>)}
+              {def.key === "kra_rows" && (
+                <th className="px-3 py-2 w-10">
+                  <input type="checkbox" checked={selectedIds.length > 0 && rows.length > 0 && selectedIds.length === rows.length} onChange={() => {
+                    if (selectedIds.length === rows.length) setSelectedIds([]);
+                    else setSelectedIds(rows.map((r: any) => r.id));
+                  }} className="h-4 w-4 rounded border-itf-rule" />
+                </th>
+              )}
+              {visibleFields.map((f) => <th key={f.name} className="px-3 py-2 text-left font-medium">{f.label}</th>)}
               <th className="px-3 py-2 w-32"></th>
             </tr>
           </thead>
           <tbody>
             {rows.map((r: any) => (
               <tr key={r.id} className="border-t border-itf-rule/60">
-                {def.fields.map((f) => (
-                  <td key={f.name} className="px-3 py-2 text-itf-ink">{r[f.name] === null ? <span className="text-itf-ink/30">—</span> : String(r[f.name])}</td>
+                {def.key === "kra_rows" && (
+                  <td className="px-3 py-2">
+                    <input type="checkbox" checked={selectedIds.includes(r.id)} onChange={() => toggleSelect(r.id)} className="h-4 w-4 rounded border-itf-rule" />
+                  </td>
+                )}
+                {visibleFields.map((f) => (
+                  <td key={f.name} className="px-3 py-2 text-itf-ink">{r[f.name] == null || r[f.name] === undefined ? <span className="text-itf-ink/30">—</span> : String(r[f.name])}</td>
                 ))}
                 <td className="px-3 py-2 text-right whitespace-nowrap">
                   <button onClick={() => { setEditing(r); setShowForm(true); }} className="text-xs text-itf-green font-semibold hover:underline">Edit</button>
@@ -250,7 +350,7 @@ function TableEditor({ def, year }: { def: TableDef; year: number }) {
               </tr>
             ))}
             {rows.length === 0 && (
-              <tr><td colSpan={def.fields.length + 1} className="px-3 py-8 text-center text-sm text-itf-ink/50">
+              <tr><td colSpan={visibleFields.length + (def.key === "kra_rows" ? 2 : 1)} className="px-3 py-8 text-center text-sm text-itf-ink/50">
                 No data for FY {year}. Add rows or clone from a previous year.
               </td></tr>
             )}
@@ -259,19 +359,20 @@ function TableEditor({ def, year }: { def: TableDef; year: number }) {
       </div>
 
       {showForm && (
-        <RowForm def={def} year={year} initial={editing} onClose={() => setShowForm(false)} onSaved={() => { setShowForm(false); invalidateAll(); }} />
+        <RowForm def={def} year={year} mode={def.key === "kra_rows" ? kraImportMode : undefined} initial={editing} onClose={() => setShowForm(false)} onSaved={() => { setShowForm(false); invalidateAll(); }} />
       )}
       {csvOpen && (
-        <CsvImport def={def} year={year} onClose={() => setCsvOpen(false)} onDone={() => { setCsvOpen(false); invalidateAll(); }} />
+        <CsvImport def={def} year={year} mode={def.key === "kra_rows" ? kraImportMode : undefined} onClose={() => setCsvOpen(false)} onDone={() => { setCsvOpen(false); invalidateAll(); }} />
       )}
     </div>
   );
 }
 
-function RowForm({ def, year, initial, onClose, onSaved }: { def: TableDef; year: number; initial: any | null; onClose: () => void; onSaved: () => void }) {
+function RowForm({ def, year, mode, initial, onClose, onSaved }: { def: TableDef; year: number; mode?: KRAImportMode; initial: any | null; onClose: () => void; onSaved: () => void }) {
+  const fields = getKraFormFields(def, mode);
   const [values, setValues] = useState<Record<string, any>>(() => {
     const v: Record<string, any> = {};
-    def.fields.forEach((f) => { v[f.name] = initial?.[f.name] ?? (f.type === "number" ? 0 : ""); });
+    fields.forEach((f) => { v[f.name] = initial?.[f.name] ?? (f.type === "number" ? 0 : ""); });
     return v;
   });
   const [saving, setSaving] = useState(false);
@@ -281,12 +382,17 @@ function RowForm({ def, year, initial, onClose, onSaved }: { def: TableDef; year
     setSaving(true);
     setError(undefined);
     const payload: any = { year };
-    def.fields.forEach((f) => {
+    fields.forEach((f) => {
       let v = values[f.name];
       if (f.type === "number") v = v === "" || v === null ? null : Number(v);
       if (f.nullable && (v === "" || v === undefined)) v = null;
       payload[f.name] = v;
     });
+    if (def.key === "kra_rows" && mode === "metric") {
+      payload.target = 0;
+      payload.actual = payload.actual ?? 0;
+      payload.pct = 0;
+    }
     const q = initial
       ? sb.from(def.key).update(payload).eq("id", initial.id)
       : sb.from(def.key).insert(payload);
@@ -305,7 +411,7 @@ function RowForm({ def, year, initial, onClose, onSaved }: { def: TableDef; year
           <button onClick={onClose} className="text-itf-ink/50 hover:text-itf-ink">✕</button>
         </div>
         <div className="p-4 space-y-3">
-          {def.fields.map((f) => (
+          {fields.map((f) => (
             <div key={f.name}>
               <label className="text-xs font-medium text-itf-ink/70">{f.label}{f.required ? " *" : ""}</label>
               {f.type === "textarea" ? (
@@ -331,12 +437,51 @@ function RowForm({ def, year, initial, onClose, onSaved }: { def: TableDef; year
   );
 }
 
-function CsvImport({ def, year, onClose, onDone }: { def: TableDef; year: number; onClose: () => void; onDone: () => void }) {
+function CsvImport({ def, year, mode, onClose, onDone }: { def: TableDef; year: number; mode?: KRAImportMode; onClose: () => void; onDone: () => void }) {
   const [text, setText] = useState("");
   const [error, setError] = useState<string>();
   const [busy, setBusy] = useState(false);
 
-  const templateHeader = def.fields.map((f) => f.name).join(",");
+  const importFields = def.key === "kra_rows" && mode === "metric"
+    ? [
+        { name: "kra", label: "KRA", type: "text" as const, required: true },
+        { name: "subgroup", label: "Subgroup", type: "text" as const, nullable: true },
+        { name: "kpi", label: "KPI", type: "text" as const, required: true },
+        { name: "actual", label: "Value", type: "number" as const, nullable: true },
+        { name: "sort_order", label: "Sort", type: "number" as const },
+      ]
+    : [
+        { name: "kra", label: "KRA", type: "text" as const, required: true },
+        { name: "subgroup", label: "Subgroup", type: "text" as const, nullable: true },
+        { name: "kpi", label: "KPI", type: "text" as const, required: true },
+        { name: "target", label: "Target", type: "number" as const, required: true },
+        { name: "actual", label: "Actual", type: "number" as const, required: true },
+        { name: "pct", label: "% Achieved", type: "number" as const, required: true },
+        { name: "sort_order", label: "Sort", type: "number" as const },
+      ];
+
+  const templateHeader = importFields.map((f) => f.name).join(",");
+
+  const resolveCsvFieldName = (header: string) => {
+    const normalized = header.trim().toLowerCase().replace(/\s+/g, "_");
+    const aliases: Record<string, string> = {
+      kra: "kra",
+      subgroup: "subgroup",
+      kpi: "kpi",
+      target: "target",
+      actual: "actual",
+      value: "actual",
+      current_value: "actual",
+      current: "actual",
+      metric_value: "actual",
+      pct: "pct",
+      percent: "pct",
+      percentage: "pct",
+      sort: "sort_order",
+      sort_order: "sort_order",
+    };
+    return aliases[normalized] ?? null;
+  };
 
   const importCsv = async () => {
     setError(undefined);
@@ -349,13 +494,20 @@ function CsvImport({ def, year, onClose, onDone }: { def: TableDef; year: number
         const cells = parseCsvLine(line);
         const obj: any = { year };
         headers.forEach((h, i) => {
-          const field = def.fields.find((f) => f.name === h);
+          const fieldName = resolveCsvFieldName(h);
+          if (!fieldName) return;
+          const field = importFields.find((f) => f.name === fieldName);
           if (!field) return;
           let v: any = cells[i];
           if (v === undefined || v === "") v = null;
           if (field.type === "number" && v !== null) v = Number(v);
-          obj[h] = v;
+          obj[fieldName] = v;
         });
+        if (def.key === "kra_rows" && mode === "metric") {
+          obj.target = 0;
+          obj.actual = obj.actual ?? 0;
+          obj.pct = 0;
+        }
         return obj;
       });
       const { error } = await sb.from(def.key).insert(rows);
@@ -381,6 +533,11 @@ function CsvImport({ def, year, onClose, onDone }: { def: TableDef; year: number
           <div className="text-xs text-itf-ink/70">
             Paste CSV rows below. First line must be a header with column names.
             <div className="mt-1 text-[11px] font-mono bg-itf-canvas rounded p-2 select-all">{templateHeader}</div>
+            {def.key === "kra_rows" && mode === "metric" && (
+              <div className="mt-2 rounded border border-itf-rule/70 bg-itf-canvas/60 p-2 text-[11px] text-itf-ink/70">
+                Use this mode for KRA 5–7 metric uploads. Enter the value for the selected year and the report will compare it automatically with the previous year.
+              </div>
+            )}
           </div>
           <textarea rows={10} value={text} onChange={(e) => setText(e.target.value)}
             placeholder={`${templateHeader}\n...`}

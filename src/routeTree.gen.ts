@@ -16,6 +16,7 @@ import { Route as ProjectionsRouteImport } from './routes/projections'
 import { Route as InsightsRouteImport } from './routes/insights'
 import { Route as ExecutiveDeckRouteImport } from './routes/executive-deck'
 import { Route as DetailedRouteImport } from './routes/detailed'
+import { Route as BkRouteImport } from './routes/bk'
 import { Route as AnalyticsRouteImport } from './routes/analytics'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
@@ -59,6 +60,11 @@ const ExecutiveDeckRoute = ExecutiveDeckRouteImport.update({
 const DetailedRoute = DetailedRouteImport.update({
   id: '/detailed',
   path: '/detailed',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BkRoute = BkRouteImport.update({
+  id: '/bk',
+  path: '/bk',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AnalyticsRoute = AnalyticsRouteImport.update({
@@ -111,6 +117,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
   '/analytics': typeof AnalyticsRoute
+  '/bk': typeof BkRoute
   '/detailed': typeof DetailedRoute
   '/executive-deck': typeof ExecutiveDeckRoute
   '/insights': typeof InsightsRoute
@@ -128,6 +135,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/analytics': typeof AnalyticsRoute
+  '/bk': typeof BkRoute
   '/detailed': typeof DetailedRoute
   '/executive-deck': typeof ExecutiveDeckRoute
   '/insights': typeof InsightsRoute
@@ -147,6 +155,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
   '/analytics': typeof AnalyticsRoute
+  '/bk': typeof BkRoute
   '/detailed': typeof DetailedRoute
   '/executive-deck': typeof ExecutiveDeckRoute
   '/insights': typeof InsightsRoute
@@ -167,6 +176,7 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/analytics'
+    | '/bk'
     | '/detailed'
     | '/executive-deck'
     | '/insights'
@@ -184,6 +194,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/analytics'
+    | '/bk'
     | '/detailed'
     | '/executive-deck'
     | '/insights'
@@ -202,6 +213,7 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/analytics'
+    | '/bk'
     | '/detailed'
     | '/executive-deck'
     | '/insights'
@@ -221,6 +233,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRouteWithChildren
   AnalyticsRoute: typeof AnalyticsRoute
+  BkRoute: typeof BkRoute
   DetailedRoute: typeof DetailedRoute
   ExecutiveDeckRoute: typeof ExecutiveDeckRoute
   InsightsRoute: typeof InsightsRoute
@@ -281,6 +294,13 @@ declare module '@tanstack/react-router' {
       path: '/detailed'
       fullPath: '/detailed'
       preLoaderRoute: typeof DetailedRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/bk': {
+      id: '/bk'
+      path: '/bk'
+      fullPath: '/bk'
+      preLoaderRoute: typeof BkRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/analytics': {
@@ -369,6 +389,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRouteWithChildren,
   AnalyticsRoute: AnalyticsRoute,
+  BkRoute: BkRoute,
   DetailedRoute: DetailedRoute,
   ExecutiveDeckRoute: ExecutiveDeckRoute,
   InsightsRoute: InsightsRoute,

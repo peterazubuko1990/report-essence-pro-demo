@@ -20,10 +20,15 @@ const formatPercent = (value: number | null | undefined) =>
 
 export const ReportHeader = memo(function ReportHeader({ title, subtitle }: { title: string; subtitle?: string }) {
   return (
-    <div className="space-y-3 bg-white border border-itf-rule rounded-[32px] p-6 sm:p-8 shadow-xl">
-      <div className="text-[11px] uppercase tracking-[0.32em] text-itf-red font-semibold">KRA Report</div>
-      <h2 className="text-3xl sm:text-4xl font-bold text-itf-ink leading-tight">{title}</h2>
-      {subtitle && <p className="max-w-3xl text-sm sm:text-base text-itf-ink/75 leading-relaxed">{subtitle}</p>}
+    <div className="relative overflow-hidden rounded-[36px] border border-itf-rule bg-gradient-to-br from-white via-itf-canvas to-white p-6 shadow-[0_20px_60px_-20px_rgba(0,0,0,0.2)] sm:p-8">
+      <div className="absolute inset-y-0 right-0 w-40 bg-gradient-to-l from-itf-green/10 to-transparent" />
+      <div className="relative space-y-3">
+        <div className="inline-flex items-center rounded-full border border-itf-red/20 bg-itf-red/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.3em] text-itf-red">
+          KRA Report
+        </div>
+        <h2 className="max-w-4xl text-3xl font-bold leading-tight text-itf-ink sm:text-4xl">{title}</h2>
+        {subtitle && <p className="max-w-3xl text-sm leading-relaxed text-itf-ink/75 sm:text-base">{subtitle}</p>}
+      </div>
     </div>
   );
 });
@@ -33,11 +38,17 @@ export const ComparisonTable = memo(function ComparisonTable({
   currentYear,
   previousYear,
   rows,
+  targetLabel = "Target",
+  actualLabel = "Actual",
+  pctLabel = "% Achieved",
 }: {
   title: string;
   currentYear: number;
   previousYear: number | null;
   rows: ComparisonRow[];
+  targetLabel?: string;
+  actualLabel?: string;
+  pctLabel?: string;
 }) {
   const headers = useMemo(
     () =>
@@ -45,15 +56,15 @@ export const ComparisonTable = memo(function ComparisonTable({
         ? [
             "S/N",
             "Key Performance Indicators",
-            `${previousYear} Target`,
-            `${previousYear} Actual`,
-            `${previousYear} % Achieved`,
-            `${currentYear} Target`,
-            `${currentYear} Actual`,
-            `${currentYear} % Achieved`,
+            `${previousYear} ${targetLabel}`,
+            `${previousYear} ${actualLabel}`,
+            `${previousYear} ${pctLabel}`,
+            `${currentYear} ${targetLabel}`,
+            `${currentYear} ${actualLabel}`,
+            `${currentYear} ${pctLabel}`,
           ]
-        : ["S/N", "Key Performance Indicators", `${currentYear} Target`, `${currentYear} Actual`, `${currentYear} % Achieved`],
-    [currentYear, previousYear]
+        : ["S/N", "Key Performance Indicators", `${currentYear} ${targetLabel}`, `${currentYear} ${actualLabel}`, `${currentYear} ${pctLabel}`],
+    [actualLabel, currentYear, pctLabel, previousYear, targetLabel]
   );
 
   const tableRows = useMemo(
@@ -83,7 +94,7 @@ export const ComparisonTable = memo(function ComparisonTable({
 
   return (
     <Section kicker="Performance" title={title}>
-      <div className="rounded-[28px] border border-itf-rule bg-white p-4 shadow-sm sm:p-6">
+      <div className="rounded-[30px] border border-itf-rule bg-gradient-to-br from-white via-itf-canvas/50 to-white p-3 shadow-[0_16px_40px_-24px_rgba(0,0,0,0.35)] sm:p-5">
         <DataTable headers={headers} rows={tableRows} className="rounded-[24px] bg-white" />
       </div>
     </Section>
@@ -117,9 +128,93 @@ export const PercentageChart = memo(function PercentageChart({
   );
 
   return (
-    <ChartCard title={title} kicker="Comparison" defaultKind="bar" allowKinds={["bar"]}>
-      {(kind) => <ChartRenderer data={data} xKey="kpi" series={series} kind={kind} unit="%" />}
-    </ChartCard>
+    <div className="overflow-hidden rounded-[30px] border border-itf-rule bg-white shadow-[0_16px_40px_-24px_rgba(0,0,0,0.35)]">
+      <ChartCard title={title} kicker="Comparison" defaultKind="bar" allowKinds={["bar"]}>
+        {(kind) => <ChartRenderer data={data} xKey="kpi" series={series} kind={kind} unit="%" />}
+      </ChartCard>
+    </div>
+  );
+});
+
+export const MetricComparisonSection = memo(function MetricComparisonSection({
+  title,
+  currentYear,
+  previousYear,
+  rows,
+}: {
+  title: string;
+  currentYear: number;
+  previousYear: number | null;
+  rows: Array<{ kpi: string; previousValue?: number | null; currentValue?: number | null }>;
+}) {
+  const series = useMemo(
+    () => (previousYear ? [String(previousYear), String(currentYear)] : [String(currentYear)]),
+    [currentYear, previousYear]
+  );
+
+  const data = useMemo(
+    () =>
+      rows.map((row) => ({
+        kpi: row.kpi,
+        ...(previousYear ? { [String(previousYear)]: row.previousValue ?? 0 } : {}),
+        [String(currentYear)]: row.currentValue ?? 0,
+      })),
+    [currentYear, previousYear, rows]
+  );
+
+  const headers = useMemo(
+    () => (previousYear ? ["S/N", "KPI", `${previousYear} Value`, `${currentYear} Value`] : ["S/N", "KPI", `${currentYear} Value`]),
+    [currentYear, previousYear]
+  );
+
+  const tableRows = useMemo(
+    () =>
+      rows.map((row, index) =>
+        previousYear
+          ? [index + 1, row.kpi, formatNumber(row.previousValue ?? null), formatNumber(row.currentValue ?? null)]
+          : [index + 1, row.kpi, formatNumber(row.currentValue ?? null)]
+      ),
+    [previousYear, rows]
+  );
+
+  return (
+    <Section kicker="Performance" title={title}>
+      <div className="grid gap-6 xl:grid-cols-[1.15fr_0.95fr]">
+        <div className="rounded-[30px] border border-itf-rule bg-gradient-to-br from-white via-itf-canvas/50 to-white p-3 shadow-[0_16px_40px_-24px_rgba(0,0,0,0.35)] sm:p-5">
+          <DataTable headers={headers} rows={tableRows} className="rounded-[24px] bg-white" />
+        </div>
+        <div className="overflow-hidden rounded-[30px] border border-itf-rule bg-white shadow-[0_16px_40px_-24px_rgba(0,0,0,0.35)]">
+          <ChartCard title={`${title} — Values`} kicker="Year-on-Year" defaultKind="bar" allowKinds={["bar"]}>
+            {(kind) => <ChartRenderer data={data} xKey="kpi" series={series} kind={kind} unit="" />}
+          </ChartCard>
+        </div>
+      </div>
+    </Section>
+  );
+});
+
+export const SubgroupComparisonSection = memo(function SubgroupComparisonSection({
+  subgroup,
+  currentYear,
+  previousYear,
+  rows,
+}: {
+  subgroup: string;
+  currentYear: number;
+  previousYear: number | null;
+  rows: ComparisonRow[];
+}) {
+  return (
+    <div className="rounded-[36px] border border-itf-rule bg-gradient-to-br from-white via-itf-canvas/60 to-white p-4 shadow-[0_20px_50px_-24px_rgba(0,0,0,0.35)] sm:p-6">
+      <div className="mb-5 border-b border-itf-rule/70 pb-4">
+        <div className="text-[10px] uppercase tracking-[0.24em] text-itf-red font-semibold">Subgroup</div>
+        <h3 className="mt-2 text-2xl font-semibold text-itf-ink">{subgroup}</h3>
+      </div>
+      <div className="grid gap-6 xl:grid-cols-[1.3fr_1fr]">
+        <ComparisonTable title={subgroup} currentYear={currentYear} previousYear={previousYear} rows={rows} />
+        <PercentageChart title={`${subgroup} — % Achieved`} currentYear={currentYear} previousYear={previousYear} rows={rows} />
+      </div>
+    </div>
   );
 });
 

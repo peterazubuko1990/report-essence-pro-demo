@@ -7,7 +7,7 @@ import {
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
-import { useEffect, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { Toaster } from "sonner";
 
 import appCss from "../styles.css?url";
@@ -123,6 +123,14 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  const [showScrollTop, setShowScrollTop] = useState(false);
+
+  useEffect(() => {
+    const onScroll = () => setShowScrollTop(window.scrollY > 220);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
 
   return (
     <QueryClientProvider client={queryClient}>
@@ -130,6 +138,14 @@ function RootComponent() {
         <YearProvider>
           {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
           <Outlet />
+          <button
+            type="button"
+            aria-label="Scroll to top"
+            onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+            className={`fixed bottom-4 right-4 z-50 inline-flex h-11 w-11 items-center justify-center rounded-full border border-itf-rule bg-white/90 text-itf-green shadow-lg backdrop-blur transition-all duration-200 hover:-translate-y-0.5 hover:bg-white ${showScrollTop ? "translate-y-0 opacity-100" : "pointer-events-none translate-y-2 opacity-0"}`}
+          >
+            ↑
+          </button>
           <Toaster position="top-right" richColors closeButton />
         </YearProvider>
       </AuthProvider>
