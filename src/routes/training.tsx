@@ -1,7 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
 import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
 import { Kpi, Note, Section, DataTable, PctBar, EmptyState } from "@/components/dashboard/widgets";
-import { trainingProgrammes, trainingTotals, staffSchool, adminSupport, growth } from "@/data/itf2024";
+import { staffSchool, adminSupport, growth } from "@/data/itf2024";
+import { supabase } from "@/integrations/supabase/client";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend, CartesianGrid, LineChart, Line } from "recharts";
 import { useYear } from "@/lib/year-context";
 
@@ -27,7 +29,29 @@ function Training() {
     );
   }
 
-  const progChart = trainingProgrammes.map((p) => ({ name: p.programme.replace(/\s*\(.*\)/, "").slice(0,22), "2023": p.p2023 ?? 0, "2024": p.p2024 ?? 0 }));
+  const { data: kra6Rows = [] } = useQuery({
+    queryKey: ["kra_rows_kra6", [2023, 2024]],
+    queryFn: async () => (await supabase.from("kra_rows").select("*").eq("kra", "KRA 6").in("year", [2023, 2024]).order("sort_order")).data ?? [],
+  });
+
+  const programmeRows = Object.values(
+    kra6Rows.reduce<Record<string, { programme: string; sort_order: number; p2023: number | null; p2024: number | null }>>((acc, row: any) => {
+      if (row.kpi === "Total Number Trained") return acc;
+      if (!acc[row.kpi]) {
+        acc[row.kpi] = { programme: row.kpi, sort_order: row.sort_order ?? 0, p2023: null, p2024: null };
+      }
+      if (row.year === 2023) acc[row.kpi].p2023 = Number(row.actual || 0);
+      if (row.year === 2024) acc[row.kpi].p2024 = Number(row.actual || 0);
+      return acc;
+    }, {}),
+  ).sort((a, b) => a.sort_order - b.sort_order);
+
+  const trainingTotals = programmeRows.reduce(
+    (totals, row) => ({ p2023: totals.p2023 + (row.p2023 ?? 0), p2024: totals.p2024 + (row.p2024 ?? 0) }),
+    { p2023: 0, p2024: 0 },
+  );
+
+  const progChart = programmeRows.map((p) => ({ name: p.programme.replace(/\s*\(.*\)/, "").slice(0,22), "2023": p.p2023 ?? 0, "2024": p.p2024 ?? 0 }));
   const capacity = adminSupport.filter((r) => r.item.startsWith("Capacity Building"));
   const staffChart = staffSchool.map((s) => ({ exam: s.exam, "2023 %": s.pct23, "2024 %": s.pct24 }));
 
@@ -56,7 +80,7 @@ function Training() {
         </div>
         <DataTable
           headers={["Programme", "2023 Participants", "2024 Participants", "Status"]}
-          rows={trainingProgrammes.map((p) => [
+          rows={programmeRows.map((p) => [
             p.programme,
             p.p2023?.toLocaleString() ?? "—",
             p.p2024?.toLocaleString() ?? "—",

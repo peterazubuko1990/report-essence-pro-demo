@@ -36,8 +36,9 @@ function AnalyticsPage() {
   });
 
   const { data: training = [] } = useQuery({
-    queryKey: ["training_all"],
-    queryFn: async () => (await supabase.from("training_programmes").select("*")).data ?? [],
+    queryKey: ["kra_rows_kra6", year],
+    enabled: year > 0,
+    queryFn: async () => (await supabase.from("kra_rows").select("*").eq("kra", "KRA 6").eq("year", year).order("sort_order")).data ?? [],
   });
 
   const officeTotals = Object.values(
@@ -69,8 +70,8 @@ function AnalyticsPage() {
   }));
 
   const programmeDist = training
-    .filter((t) => t.year === year && (t.participants ?? 0) > 0)
-    .map((t) => ({ programme: t.programme, participants: Number(t.participants) }));
+    .filter((t) => t.kpi !== "Total Number Trained")
+    .map((t) => ({ programme: t.kpi, participants: Number(t.actual ?? 0) }));
 
   const yearlyTrend = years.map((y) => {
     const yr = rev.filter((r) => r.year === y);

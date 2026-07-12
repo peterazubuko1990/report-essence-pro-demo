@@ -43,14 +43,6 @@ function ExecutiveOverview() {
     },
   });
 
-  const { data: training = [] } = useQuery({
-    queryKey: ["training_all_index"],
-    queryFn: async () => {
-      const { data } = await supabase.from("training_programmes").select("*");
-      return data ?? [];
-    },
-  });
-
   const { data: kraRows = [] } = useQuery({
     queryKey: ["kra_rows", year],
     enabled: year > 0,
@@ -89,8 +81,10 @@ function ExecutiveOverview() {
   const cf = streamOf("Course Fee", revCurrent);
   const oi = streamOf("Other Income", revCurrent);
 
-  const pTrainedCur = training.filter((t) => t.year === year).reduce((s, t) => s + Number(t.participants || 0), 0);
-  const pTrainedPrev = prevYear ? training.filter((t) => t.year === prevYear).reduce((s, t) => s + Number(t.participants || 0), 0) : 0;
+  const kra6RowsForYear = kraRows.filter((r: any) => r.kra === "KRA 6" && r.kpi !== "Total Number Trained");
+  const kra6RowsForPrevYear = kraPrev.filter((r: any) => r.kra === "KRA 6" && r.kpi !== "Total Number Trained");
+  const pTrainedCur = kra6RowsForYear.reduce((s, r) => s + Number(r.actual || 0), 0);
+  const pTrainedPrev = prevYear ? kra6RowsForPrevYear.reduce((s, r) => s + Number(r.actual || 0), 0) : 0;
 
   // build headline table dynamically
   const streams = Array.from(new Set([...revCurrent, ...revPrev].map((r: any) => r.line)));
