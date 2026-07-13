@@ -6,6 +6,7 @@ import { ChartCard, ChartRenderer } from "@/components/dashboard/ChartKit";
 import { supabase } from "@/integrations/supabase/client";
 import { useYear } from "@/lib/year-context";
 import { fmtNaira } from "@/data/itf2024";
+import { buildRevenueAggregation } from "@/lib/revenue-data";
 
 export const Route = createFileRoute("/analytics")({
   head: () => ({ meta: [{ title: "Visual Analytics · ITF Scorecard" }] }),
@@ -28,11 +29,6 @@ function AnalyticsPage() {
   const { data: allAreaRev = [] } = useQuery({
     queryKey: ["area_revenue_all"],
     queryFn: async () => (await supabase.from("area_revenue").select("*")).data ?? [],
-  });
-
-  const { data: rev = [] } = useQuery({
-    queryKey: ["revenue_rows_all"],
-    queryFn: async () => (await supabase.from("revenue_rows").select("*").order("sort_order")).data ?? [],
   });
 
   const { data: training = [] } = useQuery({
@@ -74,12 +70,14 @@ function AnalyticsPage() {
     .map((t) => ({ programme: t.kpi, participants: Number(t.actual ?? 0) }));
 
   const yearlyTrend = years.map((y) => {
-    const yr = rev.filter((r) => r.year === y);
+    const yr = allAreaRev.filter((r) => r.year === y);
+    const aggregation = buildRevenueAggregation(yr, []);
+    const totals = Object.fromEntries(aggregation.totals.map((row) => [row.stream, row]));
     return {
       year: String(y),
-      Training: +(yr.filter((r) => (r.line || "").includes("Training Contribution")).reduce((s, r) => s + Number(r.actual || 0), 0) / 1e9).toFixed(2),
-      Course: +(yr.filter((r) => (r.line || "").includes("Course Fee")).reduce((s, r) => s + Number(r.actual || 0), 0) / 1e9).toFixed(2),
-      Other: +(yr.filter((r) => (r.line || "").includes("Other Income")).reduce((s, r) => s + Number(r.actual || 0), 0) / 1e9).toFixed(2),
+      Training: +(Number(totals["Training Contribution"]?.actual ?? 0) / 1e9).toFixed(2),
+      Course: +(Number(totals["Course Fee"]?.actual ?? 0) / 1e9).toFixed(2),
+      Other: +(Number(totals["Other Income"]?.actual ?? 0) / 1e9).toFixed(2),
     };
   });
 
@@ -124,14 +122,14 @@ function AnalyticsPage() {
 
         <Section kicker="Health" title={`FY ${year} Revenue Achievement vs Target`}>
           <div className="space-y-3 py-3">
-            {rev.filter((r) => r.year === year).map((r) => {
-              const pct = Number(r.pct ?? 0);
+            {buildRevenueAggregation(areaRev, []).totals.map((row) => {
+              const pct = row.target > 0 ? (row.actual / row.target) * 100 : 0;
               const tone = pct >= 100 ? GREEN : pct >= 70 ? GOLD : RED;
               return (
-                <div key={r.id}>
+                <div key={row.stream}>
                   <div className="flex justify-between text-xs mb-1">
-                    <span className="font-medium">{r.line}</span>
-                    <span>{fmtNaira(Number(r.actual))} / {fmtNaira(Number(r.target))} — <b>{pct.toFixed(1)}%</b></span>
+                    <span className="font-medium">{row.stream}</span>
+                    <span>{fmtNaira(row.actual)} / {fmtNaira(row.target)} — <b>{pct.toFixed(1)}%</b></span>
                   </div>
                   <div className="h-2.5 rounded bg-slate-100 overflow-hidden">
                     <div className="h-full" style={{ width: `${Math.min(100, pct)}%`, background: tone }} />

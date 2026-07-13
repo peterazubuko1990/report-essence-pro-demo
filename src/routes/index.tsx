@@ -6,6 +6,7 @@ import { ChartCard, ChartRenderer } from "@/components/dashboard/ChartKit";
 import { fmtNaira, growth } from "@/data/itf2024";
 import { useYear } from "@/lib/year-context";
 import { supabase } from "@/integrations/supabase/client";
+import { buildRevenueAggregation } from "@/lib/revenue-data";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -25,20 +26,20 @@ function ExecutiveOverview() {
   // pick prior year with data (most recent before selected year)
   const prevYear = [...yearsWithData].filter((y) => y < year).pop() ?? null;
 
-  const { data: revCurrent = [] } = useQuery({
-    queryKey: ["revenue_rows", year],
+  const { data: areaRevCurrent = [] } = useQuery({
+    queryKey: ["area_revenue", year],
     enabled: year > 0,
     queryFn: async () => {
-      const { data } = await supabase.from("revenue_rows").select("*").eq("year", year).order("sort_order");
+      const { data } = await supabase.from("area_revenue").select("*").eq("year", year).order("office");
       return data ?? [];
     },
   });
 
-  const { data: revPrev = [] } = useQuery({
-    queryKey: ["revenue_rows", prevYear],
+  const { data: areaRevPrev = [] } = useQuery({
+    queryKey: ["area_revenue", prevYear],
     enabled: !!prevYear,
     queryFn: async () => {
-      const { data } = await supabase.from("revenue_rows").select("*").eq("year", prevYear as number).order("sort_order");
+      const { data } = await supabase.from("area_revenue").select("*").eq("year", prevYear as number).order("office");
       return data ?? [];
     },
   });
@@ -69,37 +70,30 @@ function ExecutiveOverview() {
     );
   }
 
-  const sumActual = (rows: any[]) => rows.reduce((s, r) => s + Number(r.actual || 0), 0);
-  const sumTarget = (rows: any[]) => rows.reduce((s, r) => s + Number(r.target || 0), 0);
-
-  const totalRevCur = sumActual(revCurrent);
-  const totalRevPrev = sumActual(revPrev);
+  const aggregation = buildRevenueAggregation(areaRevCurrent, areaRevPrev);
+  const revenueTotals = aggregation.totals;
+  const totalRevCur = revenueTotals.reduce((sum, row) => sum + row.actual, 0);
+  const totalRevPrev = revenueTotals.reduce((sum, row) => sum + row.previousActual, 0);
   const totalGrowth = prevYear ? growth(totalRevCur, totalRevPrev) : null;
 
-  const streamOf = (line: string, rows: any[]) => rows.find((r) => (r.line || "").toLowerCase().includes(line.toLowerCase()));
-  const tc = streamOf("Training Contribution", revCurrent);
-  const cf = streamOf("Course Fee", revCurrent);
-  const oi = streamOf("Other Income", revCurrent);
+  const streamMap = Object.fromEntries(revenueTotals.map((row) => [row.stream, row]));
+  const tc = streamMap["Training Contribution"];
+  const cf = streamMap["Course Fee"];
+  const oi = streamMap["Other Income"];
 
   const kra6RowsForYear = kraRows.filter((r: any) => r.kra === "KRA 6" && r.kpi !== "Total Number Trained");
   const kra6RowsForPrevYear = kraPrev.filter((r: any) => r.kra === "KRA 6" && r.kpi !== "Total Number Trained");
   const pTrainedCur = kra6RowsForYear.reduce((s, r) => s + Number(r.actual || 0), 0);
   const pTrainedPrev = prevYear ? kra6RowsForPrevYear.reduce((s, r) => s + Number(r.actual || 0), 0) : 0;
 
-  // build headline table dynamically
-  const streams = Array.from(new Set([...revCurrent, ...revPrev].map((r: any) => r.line)));
-  const revChart = streams.map((line) => {
-    const cur = streamOf(line, revCurrent);
-    const prev = streamOf(line, revPrev);
-    return {
-      name: line,
-      [`${prevYear ?? "Prev"}`]: (Number(prev?.actual || 0)) / 1_000_000_000,
-      [`${year}`]: (Number(cur?.actual || 0)) / 1_000_000_000,
-    };
-  });
+  const revChart = revenueTotals.map((row) => ({
+    name: row.stream,
+    [`${prevYear ?? "Prev"}`]: row.previousActual / 1_000_000_000,
+    [`${year}`]: row.actual / 1_000_000_000,
+  }));
 
   const kpiTone = (pct: number) => pct >= 100 ? "good" : pct >= 70 ? "warn" : "bad";
-  const totalPct = sumTarget(revCurrent) > 0 ? (totalRevCur / sumTarget(revCurrent)) * 100 : 0;
+  const totalPct = revenueTotals.reduce((sum, row) => sum + row.target, 0) > 0 ? (totalRevCur / revenueTotals.reduce((sum, row) => sum + row.target, 0)) * 100 : 0;
 
   // top KRA wins & declines
   const kraWithPct = kraRows.map((k: any) => ({ ...k, pct: Number(k.target) > 0 ? (Number(k.actual) / Number(k.target)) * 100 : 0 }));
@@ -128,7 +122,7 @@ function ExecutiveOverview() {
           <EnhancedKpi
             label="Training Contribution"
             currentValue={Number(tc.actual)}
-            previousValue={prevYear ? Number(streamOf("Training Contribution", revPrev)?.actual || 0) : undefined}
+            previousValue={prevYear ? Number(tc.previousActual) : undefined}
             currentYear={year}
             previousYear={prevYear}
             formatValue={fmtNaira}
@@ -143,7 +137,7 @@ function ExecutiveOverview() {
           <EnhancedKpi
             label="Course Fee"
             currentValue={Number(cf.actual)}
-            previousValue={prevYear ? Number(streamOf("Course Fee", revPrev)?.actual || 0) : undefined}
+            previousValue={prevYear ? Number(cf.previousActual) : undefined}
             currentYear={year}
             previousYear={prevYear}
             formatValue={fmtNaira}
@@ -158,7 +152,7 @@ function ExecutiveOverview() {
           <EnhancedKpi
             label="Other Income"
             currentValue={Number(oi.actual)}
-            previousValue={prevYear ? Number(streamOf("Other Income", revPrev)?.actual || 0) : undefined}
+            previousValue={prevYear ? Number(oi.previousActual) : undefined}
             currentYear={year}
             previousYear={prevYear}
             formatValue={fmtNaira}
@@ -194,20 +188,20 @@ function ExecutiveOverview() {
         {/* Revenue Streams */}
         <EnhancedKpi
           label="Revenue Streams"
-          currentValue={revCurrent.length}
-          previousValue={prevYear ? revPrev.length : undefined}
+          currentValue={revenueTotals.length}
+          previousValue={undefined}
           currentYear={year}
           previousYear={prevYear}
           formatValue={(v) => String(v)}
           isPositiveGood={true}
-          tone={prevYear && revPrev.length > 0 ? (revCurrent.length >= revPrev.length ? "good" : "warn") : "neutral"}
+          tone="neutral"
         />
 
         {/* Target Achievement */}
         <EnhancedKpi
           label="Target Achievement"
           currentValue={totalPct}
-          previousValue={prevYear ? (sumTarget(revPrev) > 0 ? (totalRevPrev / sumTarget(revPrev)) * 100 : 0) : undefined}
+          previousValue={prevYear ? (revenueTotals.reduce((sum, row) => sum + row.previousTarget, 0) > 0 ? (totalRevPrev / revenueTotals.reduce((sum, row) => sum + row.previousTarget, 0)) * 100 : 0) : undefined}
           currentYear={year}
           previousYear={prevYear}
           formatValue={(v) => `${v.toFixed(1)}%`}
@@ -217,7 +211,7 @@ function ExecutiveOverview() {
 
       {revChart.length > 0 && (
         <ChartCard
-          title={prevYear ? `${prevYear} vs ${year} — Headline Revenue Streams (₦B)` : `${year} — Headline Revenue Streams (₦B)`}
+          title={prevYear ? `${prevYear} vs ${year} — Revenue Streams (₦B)` : `${year} — Revenue Streams (₦B)`}
           kicker="Revenue"
           defaultKind="bar"
           allowKinds={["bar", "line", "area", "radar"]}
@@ -251,33 +245,31 @@ function ExecutiveOverview() {
         </Section>
       </div>
 
-      {revCurrent.length > 0 && (
-        <Section kicker="Snapshot" title={`Headline Revenue Table — FY ${year}`}>
+      {areaRevCurrent.length > 0 && (
+        <Section kicker="Snapshot" title={`Revenue Summary — FY ${year}`}>
           <DataTable
             headers={prevYear
               ? [`Stream`, `${prevYear} Target`, `${prevYear} Actual`, `${prevYear} %`, `${year} Target`, `${year} Actual`, `${year} %`, `YoY Growth`]
               : [`Stream`, `${year} Target`, `${year} Actual`, `${year} %`]}
-            rows={streams.map((line) => {
-              const cur = streamOf(line, revCurrent);
-              const prev = streamOf(line, revPrev);
+            rows={revenueTotals.map((row) => {
+              const g = growth(row.actual, row.previousActual);
               if (prevYear) {
-                const g = growth(Number(cur?.actual || 0), Number(prev?.actual || 0));
                 return [
-                  line,
-                  fmtNaira(Number(prev?.target || 0)),
-                  fmtNaira(Number(prev?.actual || 0)),
-                  <PctBar key={line+"a"} value={Number(prev?.pct || 0)} />,
-                  fmtNaira(Number(cur?.target || 0)),
-                  fmtNaira(Number(cur?.actual || 0)),
-                  <PctBar key={line+"b"} value={Number(cur?.pct || 0)} />,
-                  <span key={line+"g"} className={g >= 0 ? "text-itf-green font-semibold" : "text-itf-red font-semibold"}>{g.toFixed(1)}%</span>,
+                  row.stream,
+                  fmtNaira(row.previousTarget),
+                  fmtNaira(row.previousActual),
+                  <PctBar key={row.stream+"a"} value={row.previousPct} />,
+                  fmtNaira(row.target),
+                  fmtNaira(row.actual),
+                  <PctBar key={row.stream+"b"} value={row.pct} />,
+                  <span key={row.stream+"g"} className={g >= 0 ? "text-itf-green font-semibold" : "text-itf-red font-semibold"}>{g.toFixed(1)}%</span>,
                 ];
               }
               return [
-                line,
-                fmtNaira(Number(cur?.target || 0)),
-                fmtNaira(Number(cur?.actual || 0)),
-                <PctBar key={line+"a"} value={Number(cur?.pct || 0)} />,
+                row.stream,
+                fmtNaira(row.target),
+                fmtNaira(row.actual),
+                <PctBar key={row.stream+"a"} value={row.pct} />,
               ];
             })}
           />

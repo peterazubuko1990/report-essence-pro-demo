@@ -16,7 +16,7 @@ export const Route = createFileRoute("/projections")({
 });
 
 type KraRow = { year: number; kra: string; kpi: string; actual: number; target: number };
-type RevRow = { year: number; line: string; actual: number };
+type RevRow = { year: number; stream: string; actual: number; target: number };
 
 /** Linear-regression forecast: y = a + b*x over the last N observations. */
 function forecast(series: { year: number; value: number }[], horizon: number) {
@@ -56,16 +56,16 @@ function Projections() {
   const rev = useQuery<RevRow[]>({
     queryKey: ["proj_rev"],
     queryFn: async () => {
-      const { data } = await (supabase.from as any)("revenue_rows").select("year, line, actual");
-      return (data ?? []) as RevRow[];
+      const { data } = await (supabase.from as any)("area_revenue").select("year, stream, actual, target");
+      return (data ?? []).map((row: any) => ({ year: row.year, stream: row.stream, actual: Number(row.actual ?? 0), target: Number(row.target ?? 0) })) as RevRow[];
     },
   });
 
   const revSeries = useMemo(() => {
-    const lines = Array.from(new Set((rev.data ?? []).map((r) => r.line)));
+    const lines = Array.from(new Set((rev.data ?? []).map((r) => r.stream)));
     return lines.map((line) => {
       const hist = (rev.data ?? [])
-        .filter((r) => r.line === line)
+        .filter((r) => r.stream === line)
         .map((r) => ({ year: r.year, value: Number(r.actual) }))
         .sort((a, b) => a.year - b.year);
       const proj = forecast(hist, horizon);
