@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
 import { Kpi, Note, Section, DataTable, PctBar, EmptyState } from "@/components/dashboard/widgets";
+import { NigeriaRevenueMap } from "@/components/dashboard/NigeriaRevenueMap";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { fmtNaira, growth, achievement } from "@/data/itf2024";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend, CartesianGrid, PieChart, Pie, Cell } from "recharts";
@@ -113,7 +114,7 @@ function Revenue() {
               </PieChart>
             </ResponsiveContainer>
           </div>
-          <Note>Revenue mix is drawn from the live headline rows in the database for the selected year.</Note>
+          <Note>{hasRevenueValues ? "Revenue mix is drawn from the live headline rows in the database for the selected year." : "No revenue data is available for this year yet."}</Note>
         </Section>
         <Section kicker="By Category" title="Training Contribution by Office Category (₦ Billions)">
           <div className="h-72">
@@ -132,6 +133,10 @@ function Revenue() {
           <Note>{hasRevenueValues ? "Category totals are built from the most recent area-office rows stored for the selected year and the previous year." : "No area-office revenue data is available for this year yet."}</Note>
         </Section>
       </div>
+
+      <Section kicker="Map" title="Nigeria Revenue by State">
+        <NigeriaRevenueMap rows={areaCurrent} />
+      </Section>
 
       <div className="grid md:grid-cols-2 gap-6">
         <Section kicker="Ranking" title={`Top 10 Offices by Revenue — FY ${year} (₦B)`}>
