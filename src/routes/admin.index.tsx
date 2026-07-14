@@ -12,13 +12,79 @@ export const Route = createFileRoute("/admin/")({
 
 type TableKey = "kra_rows" | "revenue_rows" | "area_revenue" | "training_programmes" | "staff_school" | "hr_metrics" | "challenges" | "way_forward" | "wins" | "presenter_notes";
 type KRAImportMode = "comparison" | "metric";
+type RevenueUploadMode = "area-office" | "training-centre";
+type ViewKey = TableKey | "area-office-revenue" | "training-centre-revenue";
 const sb = supabase as any;
 
+const AREA_OFFICE_OPTIONS = [
+  { name: "Abuja", category: "A" },
+  { name: "Apapa", category: "A" },
+  { name: "Benin", category: "A" },
+  { name: "Ikeja", category: "A" },
+  { name: "Isolo", category: "A" },
+  { name: "Lagos Island", category: "A" },
+  { name: "Lekki", category: "A" },
+  { name: "Port Harcourt", category: "A" },
+  { name: "Rumuokuta", category: "A" },
+  { name: "V/Island", category: "A" },
+  { name: "Abeokuta", category: "B" },
+  { name: "Badagry", category: "B" },
+  { name: "Enugu", category: "B" },
+  { name: "Gwagwalada", category: "B" },
+  { name: "Ibadan", category: "B" },
+  { name: "Kaduna", category: "B" },
+  { name: "Kano", category: "B" },
+  { name: "Lafia", category: "B" },
+  { name: "Warri", category: "B" },
+  { name: "Aba", category: "C" },
+  { name: "Abakaliki", category: "C" },
+  { name: "Akure", category: "C" },
+  { name: "Awka", category: "C" },
+  { name: "Bauchi", category: "C" },
+  { name: "Calabar", category: "C" },
+  { name: "Gombe", category: "C" },
+  { name: "Gusau", category: "C" },
+  { name: "Ilorin", category: "C" },
+  { name: "Ikorodu", category: "C" },
+  { name: "Jos", category: "C" },
+  { name: "Katsina", category: "C" },
+  { name: "Lokoja", category: "C" },
+  { name: "Maiduguri", category: "C" },
+  { name: "Makurdi", category: "C" },
+  { name: "Minna", category: "C" },
+  { name: "Owerri", category: "C" },
+  { name: "Sokoto", category: "C" },
+  { name: "Uyo", category: "C" },
+  { name: "Yenagoa", category: "C" },
+  { name: "Yola", category: "C" },
+] as const;
+
+const TRAINING_CENTRE_OPTIONS = [
+  "Centre for Excellence",
+  "ISTC Ikeja",
+  "ISTC Kano",
+  "ISTC Lokoja",
+  "MSTC Abuja",
+  "Staff School",
+  "Corporate Office Abuja",
+] as const;
+
+const REVENUE_STREAM_OPTIONS = ["Training Contribution", "Course Fee", "Other Income"] as const;
+
+function normalizeOfficeName(value?: string | null) {
+  const text = String(value ?? "").trim();
+  if (!text) return null;
+  const lowered = text.toLowerCase();
+  if (lowered.includes("rumuokwuta") || lowered.includes("rumuokuta")) return "Rumuokuta";
+  if (lowered.includes("c.f.e") || lowered.includes("centre for excellence") || lowered.includes("center for excellence")) return "Centre for Excellence";
+  return text;
+}
+
 type FieldDef = { name: string; label: string; type: "text" | "number" | "textarea"; required?: boolean; nullable?: boolean };
-type TableDef = { key: TableKey; label: string; fields: FieldDef[]; order?: string };
+type TableDef = { key: ViewKey; label: string; tableKey: TableKey; fields: FieldDef[]; order?: string; mode?: RevenueUploadMode };
 
 const TABLES: TableDef[] = [
-  { key: "kra_rows", label: "KRA Rows", order: "sort_order",
+  { key: "kra_rows", label: "KRA Rows", tableKey: "kra_rows", order: "sort_order",
     fields: [
       { name: "kra", label: "KRA", type: "text", required: true },
       { name: "subgroup", label: "Subgroup", type: "text", nullable: true },
@@ -28,7 +94,7 @@ const TABLES: TableDef[] = [
       { name: "pct", label: "% Achieved", type: "number", required: true },
       { name: "sort_order", label: "Sort", type: "number" },
     ] },
-  { key: "revenue_rows", label: "Headline Revenue", order: "sort_order",
+  { key: "revenue_rows", label: "Headline Revenue", tableKey: "revenue_rows", order: "sort_order",
     fields: [
       { name: "line", label: "Line", type: "text", required: true },
       { name: "target", label: "Target (₦)", type: "number", required: true },
@@ -36,50 +102,57 @@ const TABLES: TableDef[] = [
       { name: "pct", label: "% Achieved", type: "number", required: true },
       { name: "sort_order", label: "Sort", type: "number" },
     ] },
-  { key: "area_revenue", label: "Area-Office Revenue",
+  { key: "area-office-revenue", label: "Area Office Revenue", tableKey: "area_revenue", mode: "area-office",
     fields: [
       { name: "office", label: "Office", type: "text", required: true },
-      { name: "category", label: "Category (A/B/C)", type: "text", required: true },
+      { name: "category", label: "Category (A / B / C)", type: "text", required: true },
       { name: "stream", label: "Stream", type: "text", required: true },
       { name: "target", label: "Target (₦)", type: "number", required: true },
       { name: "actual", label: "Actual (₦)", type: "number", required: true },
     ] },
-  { key: "training_programmes", label: "Training Programmes",
+  { key: "training-centre-revenue", label: "Training Centre Revenue", tableKey: "area_revenue", mode: "training-centre",
+    fields: [
+      { name: "office", label: "Office", type: "text", required: true },
+      { name: "stream", label: "Stream", type: "text", required: true },
+      { name: "target", label: "Target (₦)", type: "number", required: true },
+      { name: "actual", label: "Actual (₦)", type: "number", required: true },
+    ] },
+  { key: "training_programmes", label: "Training Programmes", tableKey: "training_programmes",
     fields: [
       { name: "programme", label: "Programme", type: "text", required: true },
       { name: "participants", label: "Participants", type: "number", nullable: true },
     ] },
-  { key: "staff_school", label: "Staff School Results",
+  { key: "staff_school", label: "Staff School Results", tableKey: "staff_school",
     fields: [
       { name: "exam", label: "Exam", type: "text", required: true },
       { name: "students", label: "Students", type: "number", required: true },
       { name: "passed", label: "Passed", type: "number", required: true },
       { name: "pct", label: "% Pass", type: "number", required: true },
     ] },
-  { key: "hr_metrics", label: "HR Metrics", order: "sort_order",
+  { key: "hr_metrics", label: "HR Metrics", tableKey: "hr_metrics", order: "sort_order",
     fields: [
       { name: "item", label: "Item", type: "text", required: true },
       { name: "value", label: "Value", type: "number", required: true },
       { name: "sort_order", label: "Sort", type: "number" },
     ] },
-  { key: "challenges", label: "Challenges", order: "sort_order",
+  { key: "challenges", label: "Challenges", tableKey: "challenges", order: "sort_order",
     fields: [
       { name: "text", label: "Challenge", type: "textarea", required: true },
       { name: "sort_order", label: "Sort", type: "number" },
     ] },
-  { key: "way_forward", label: "Way Forward", order: "sort_order",
+  { key: "way_forward", label: "Way Forward", tableKey: "way_forward", order: "sort_order",
     fields: [
       { name: "text", label: "Recommendation", type: "textarea", required: true },
       { name: "sort_order", label: "Sort", type: "number" },
     ] },
-  { key: "wins", label: "Wins / Achievements", order: "sort_order",
+  { key: "wins", label: "Wins / Achievements", tableKey: "wins", order: "sort_order",
     fields: [
       { name: "section", label: "Section (e.g. overview, KRA 1)", type: "text", required: true },
       { name: "text", label: "Achievement", type: "textarea", required: true },
       { name: "tone", label: "Tone (good / warn / bad)", type: "text" },
       { name: "sort_order", label: "Sort", type: "number" },
     ] },
-  { key: "presenter_notes", label: "Presenter Notes", order: "sort_order",
+  { key: "presenter_notes", label: "Presenter Notes", tableKey: "presenter_notes", order: "sort_order",
     fields: [
       { name: "section", label: "Section key (matches page section)", type: "text", required: true },
       { name: "title", label: "Title", type: "text", nullable: true },
@@ -89,7 +162,7 @@ const TABLES: TableDef[] = [
 ];
 
 function getKraFormFields(def: TableDef, mode?: KRAImportMode): FieldDef[] {
-  if (def.key !== "kra_rows") return def.fields;
+  if (def.tableKey !== "kra_rows") return def.fields;
   if (mode === "metric") {
     return [
       { name: "kra", label: "KRA", type: "text", required: true },
@@ -108,6 +181,68 @@ function getKraFormFields(def: TableDef, mode?: KRAImportMode): FieldDef[] {
     { name: "pct", label: "% Achieved", type: "number", required: true },
     { name: "sort_order", label: "Sort", type: "number" },
   ];
+}
+
+function getFormFields(def: TableDef, mode?: KRAImportMode): FieldDef[] {
+  if (def.tableKey === "kra_rows") return getKraFormFields(def, mode);
+  return def.fields;
+}
+
+function normalizeRevenueStream(value?: string | null, mode?: RevenueUploadMode): string | null {
+  const text = String(value ?? "").trim().toLowerCase();
+  if (text.includes("training")) return "Training Contribution";
+  if (text.includes("course")) return "Course Fee";
+  if (text.includes("other")) return "Other Income";
+  return null;
+}
+
+function normalizeRevenueCategory(value?: string | null, mode?: RevenueUploadMode): string | null {
+  const text = String(value ?? "").trim();
+  if (!text) return null;
+  const upper = text.toUpperCase();
+  if (mode === "area-office") return ["A", "B", "C"].includes(upper) ? upper : null;
+  return "Training Centre";
+}
+
+function buildRevenueTemplateCsv(def: TableDef): string {
+  const fields = def.fields;
+  const header = fields.map((f) => f.name).join(",");
+
+  const lines: string[] = [header];
+
+  if (def.tableKey === "area_revenue") {
+    if (def.mode === "area-office") {
+      for (const office of AREA_OFFICE_OPTIONS) {
+        for (const stream of REVENUE_STREAM_OPTIONS) {
+          const exampleRow: Record<string, any> = {
+            office: office.name,
+            category: office.category,
+            stream,
+            target: "",
+            actual: "",
+          };
+          const row = fields.map((f) => escapeCsv(exampleRow[f.name] ?? "")).join(",");
+          lines.push(row);
+        }
+      }
+    } else if (def.mode === "training-centre") {
+      for (const centre of TRAINING_CENTRE_OPTIONS) {
+        const streams = centre === "Corporate Office Abuja" ? ["Other Income"] : ["Course Fee", "Other Income"];
+        for (const stream of streams) {
+          const exampleRow: Record<string, any> = {
+            office: centre,
+            stream,
+            target: "",
+            actual: "",
+          };
+          const row = fields.map((f) => escapeCsv(exampleRow[f.name] ?? "")).join(",");
+          lines.push(row);
+        }
+      }
+    }
+  }
+
+  return lines.join("\n");
 }
 
 function isKraRowInScope(kra: string | null | undefined, mode?: KRAImportMode) {
@@ -155,7 +290,7 @@ async function fetchLatestKraRowsForMode(mode: KRAImportMode) {
 
 function AdminHome() {
   const { year, years, setYear } = useYear();
-  const [active, setActive] = useState<TableKey>("kra_rows");
+  const [active, setActive] = useState<ViewKey>("kra_rows");
   const [newYear, setNewYear] = useState<string>("");
   const qc = useQueryClient();
   const def = TABLES.find((t) => t.key === active)!;
@@ -260,7 +395,7 @@ function TableEditor({ def, year }: { def: TableDef; year: number }) {
   const query = useQuery({
     queryKey: [def.key, year],
     queryFn: async () => {
-      let q = sb.from(def.key).select("*").eq("year", year);
+      let q = sb.from(def.tableKey).select("*").eq("year", year);
       if (def.order) q = q.order(def.order);
       const { data, error } = await q;
       if (error) throw error;
@@ -269,10 +404,10 @@ function TableEditor({ def, year }: { def: TableDef; year: number }) {
   });
 
   const allRows = query.data ?? [];
-  const rows = def.key === "kra_rows"
-    ? allRows.filter((row: any) => isKraRowInScope(row.kra, def.key === "kra_rows" ? kraImportMode : undefined))
+  const rows = def.tableKey === "kra_rows"
+    ? allRows.filter((row: any) => isKraRowInScope(row.kra, def.tableKey === "kra_rows" ? kraImportMode : undefined))
     : allRows;
-  const visibleFields = getKraFormFields(def, def.key === "kra_rows" ? kraImportMode : undefined);
+  const visibleFields = getFormFields(def, def.tableKey === "kra_rows" ? kraImportMode : undefined);
 
   const invalidateAll = () => {
     qc.invalidateQueries({ queryKey: [def.key, year] });
@@ -288,7 +423,7 @@ function TableEditor({ def, year }: { def: TableDef; year: number }) {
 
   const remove = async (id: string) => {
     if (!confirm("Delete this row?")) return;
-    const { error } = await sb.from(def.key).delete().eq("id", id);
+    const { error } = await sb.from(def.tableKey).delete().eq("id", id);
     if (error) return toast.error(error.message);
     invalidateAll();
     setSelectedIds((prev) => prev.filter((x) => x !== id));
@@ -298,7 +433,7 @@ function TableEditor({ def, year }: { def: TableDef; year: number }) {
   const removeSelected = async () => {
     if (!selectedIds.length) return;
     if (!confirm(`Delete ${selectedIds.length} selected row(s)?`)) return;
-    const { error } = await sb.from(def.key).delete().in("id", selectedIds);
+    const { error } = await sb.from(def.tableKey).delete().in("id", selectedIds);
     if (error) return toast.error(error.message);
     invalidateAll();
     setSelectedIds([]);
@@ -306,39 +441,52 @@ function TableEditor({ def, year }: { def: TableDef; year: number }) {
   };
 
   const downloadTemplate = async () => {
-    if (def.key !== "kra_rows") return;
-    const fields = getKraFormFields(def, kraImportMode);
-    const header = fields.map((f) => f.name).join(",");
+    if (def.tableKey === "kra_rows") {
+      const fields = getKraFormFields(def, kraImportMode);
+      const header = fields.map((f) => f.name).join(",");
 
-    let templateRows: Array<Record<string, unknown>> = [];
-    try {
-      const result = await fetchLatestKraRowsForMode(kraImportMode);
-      templateRows = result.rows;
-    } catch (error: any) {
-      console.error("Failed to fetch previous KRA rows for template", error);
-      templateRows = [];
+      let templateRows: Array<Record<string, unknown>> = [];
+      try {
+        const result = await fetchLatestKraRowsForMode(kraImportMode);
+        templateRows = result.rows;
+      } catch (error: any) {
+        console.error("Failed to fetch previous KRA rows for template", error);
+        templateRows = [];
+      }
+
+      const csvLines = [header];
+      for (const row of templateRows) {
+        const values = fields.map((f) => {
+          if (f.name === "kra") return escapeCsv(row.kra);
+          if (f.name === "subgroup") return escapeCsv(row.subgroup);
+          if (f.name === "kpi") return escapeCsv(row.kpi);
+          if (f.name === "sort_order") return escapeCsv(row.sort_order);
+          return "";
+        });
+        csvLines.push(values.join(","));
+      }
+
+      const csv = csvLines.join("\n");
+      const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = kraImportMode === "metric" ? "kra-5-7-template.csv" : "kra-1-4-template.csv";
+      link.click();
+      URL.revokeObjectURL(url);
+      return;
     }
 
-    const csvLines = [header];
-    for (const row of templateRows) {
-      const values = fields.map((f) => {
-        if (f.name === "kra") return escapeCsv(row.kra);
-        if (f.name === "subgroup") return escapeCsv(row.subgroup);
-        if (f.name === "kpi") return escapeCsv(row.kpi);
-        if (f.name === "sort_order") return escapeCsv(row.sort_order);
-        return "";
-      });
-      csvLines.push(values.join(","));
+    if (def.tableKey === "area_revenue") {
+      const csv = buildRevenueTemplateCsv(def);
+      const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = def.mode === "training-centre" ? "training-centre-revenue-template.csv" : "area-office-revenue-template.csv";
+      link.click();
+      URL.revokeObjectURL(url);
     }
-
-    const csv = csvLines.join("\n");
-    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = kraImportMode === "metric" ? "kra-5-7-template.csv" : "kra-1-4-template.csv";
-    link.click();
-    URL.revokeObjectURL(url);
   };
 
   return (
@@ -349,7 +497,7 @@ function TableEditor({ def, year }: { def: TableDef; year: number }) {
           <p className="text-[11px] text-itf-ink/60">FY {year} · {rows.length} row(s)</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          {def.key === "kra_rows" && (
+          {def.tableKey === "kra_rows" && (
             <div className="flex items-center gap-1 rounded border border-itf-rule bg-itf-canvas px-2 py-1">
               <button onClick={() => setKraImportMode("comparison")} className={`rounded px-2 py-1 text-[11px] font-semibold ${kraImportMode === "comparison" ? "bg-itf-green text-white" : "text-itf-ink/70"}`}>
                 KRA 1–4 comparison
@@ -359,11 +507,11 @@ function TableEditor({ def, year }: { def: TableDef; year: number }) {
               </button>
             </div>
           )}
-          {def.key === "kra_rows" && (
-            <>
-              <button onClick={downloadTemplate} className="rounded border border-itf-rule px-3 py-1.5 text-xs font-medium hover:bg-itf-canvas">↓ Download Template</button>
-              <button onClick={removeSelected} disabled={!selectedIds.length} className="rounded border border-itf-red/40 px-3 py-1.5 text-xs font-medium text-itf-red hover:bg-itf-red/5 disabled:opacity-50">🗑 Delete Selected</button>
-            </>
+          {(def.tableKey === "kra_rows" || def.tableKey === "area_revenue") && (
+            <button onClick={downloadTemplate} className="rounded border border-itf-rule px-3 py-1.5 text-xs font-medium hover:bg-itf-canvas">↓ Download Template</button>
+          )}
+          {def.tableKey === "kra_rows" && (
+            <button onClick={removeSelected} disabled={!selectedIds.length} className="rounded border border-itf-red/40 px-3 py-1.5 text-xs font-medium text-itf-red hover:bg-itf-red/5 disabled:opacity-50">🗑 Delete Selected</button>
           )}
           <button onClick={() => setCsvOpen(true)} className="rounded border border-itf-rule px-3 py-1.5 text-xs font-medium hover:bg-itf-canvas">↑ Import CSV</button>
           <button onClick={() => { setEditing(null); setShowForm(true); }} className="rounded bg-itf-green text-white px-3 py-1.5 text-xs font-semibold">+ Add Row</button>
@@ -389,7 +537,7 @@ function TableEditor({ def, year }: { def: TableDef; year: number }) {
           <tbody>
             {rows.map((r: any) => (
               <tr key={r.id} className="border-t border-itf-rule/60">
-                {def.key === "kra_rows" && (
+                {def.tableKey === "kra_rows" && (
                   <td className="px-3 py-2">
                     <input type="checkbox" checked={selectedIds.includes(r.id)} onChange={() => toggleSelect(r.id)} className="h-4 w-4 rounded border-itf-rule" />
                   </td>
@@ -404,7 +552,7 @@ function TableEditor({ def, year }: { def: TableDef; year: number }) {
               </tr>
             ))}
             {rows.length === 0 && (
-              <tr><td colSpan={visibleFields.length + (def.key === "kra_rows" ? 2 : 1)} className="px-3 py-8 text-center text-sm text-itf-ink/50">
+              <tr><td colSpan={visibleFields.length + (def.tableKey === "kra_rows" ? 2 : 1)} className="px-3 py-8 text-center text-sm text-itf-ink/50">
                 No data for FY {year}. Add rows or clone from a previous year.
               </td></tr>
             )}
@@ -413,17 +561,17 @@ function TableEditor({ def, year }: { def: TableDef; year: number }) {
       </div>
 
       {showForm && (
-        <RowForm def={def} year={year} mode={def.key === "kra_rows" ? kraImportMode : undefined} initial={editing} onClose={() => setShowForm(false)} onSaved={() => { setShowForm(false); invalidateAll(); }} />
+        <RowForm def={def} year={year} mode={def.tableKey === "kra_rows" ? kraImportMode : undefined} initial={editing} onClose={() => setShowForm(false)} onSaved={() => { setShowForm(false); invalidateAll(); }} />
       )}
       {csvOpen && (
-        <CsvImport def={def} year={year} mode={def.key === "kra_rows" ? kraImportMode : undefined} onClose={() => setCsvOpen(false)} onDone={() => { setCsvOpen(false); invalidateAll(); }} />
+        <CsvImport def={def} year={year} mode={def.tableKey === "kra_rows" ? kraImportMode : undefined} onClose={() => setCsvOpen(false)} onDone={() => { setCsvOpen(false); invalidateAll(); }} />
       )}
     </div>
   );
 }
 
 function RowForm({ def, year, mode, initial, onClose, onSaved }: { def: TableDef; year: number; mode?: KRAImportMode; initial: any | null; onClose: () => void; onSaved: () => void }) {
-  const fields = getKraFormFields(def, mode);
+  const fields = getFormFields(def, mode);
   const [values, setValues] = useState<Record<string, any>>(() => {
     const v: Record<string, any> = {};
     fields.forEach((f) => { v[f.name] = initial?.[f.name] ?? (f.type === "number" ? 0 : ""); });
@@ -442,14 +590,47 @@ function RowForm({ def, year, mode, initial, onClose, onSaved }: { def: TableDef
       if (f.nullable && (v === "" || v === undefined)) v = null;
       payload[f.name] = v;
     });
-    if (def.key === "kra_rows" && mode === "metric") {
+    if (def.tableKey === "kra_rows" && mode === "metric") {
       payload.target = 0;
       payload.actual = payload.actual ?? 0;
       payload.pct = 0;
     }
+    if (def.tableKey === "area_revenue") {
+      const normalizedStream = normalizeRevenueStream(values.stream, def.mode);
+      const normalizedCategory = normalizeRevenueCategory(values.category, def.mode);
+      if (!values.office) {
+        setError("Office is required.");
+        setSaving(false);
+        return;
+      }
+      if (!normalizedStream) {
+        setError("Stream must be Training Contribution, Course Fee or Other Income.");
+        setSaving(false);
+        return;
+      }
+      if (def.mode === "area-office" && !normalizedCategory) {
+        setError("Category must be A, B or C.");
+        setSaving(false);
+        return;
+      }
+      if (def.mode === "training-centre" && normalizedStream === "Training Contribution") {
+        setError("Training centres should use Course Fee or Other Income only.");
+        setSaving(false);
+        return;
+      }
+      payload.office = String(values.office).trim();
+      if (def.mode === "area-office") {
+        payload.category = normalizedCategory;
+      } else {
+        payload.category = "Training Centre";
+      }
+      payload.stream = normalizedStream;
+      payload.target = Number(values.target ?? 0);
+      payload.actual = Number(values.actual ?? 0);
+    }
     const q = initial
-      ? sb.from(def.key).update(payload).eq("id", initial.id)
-      : sb.from(def.key).insert(payload);
+      ? sb.from(def.tableKey).update(payload).eq("id", initial.id)
+      : sb.from(def.tableKey).insert(payload);
     const { error } = await q;
     setSaving(false);
     if (error) { setError(error.message); toast.error(error.message); return; }
@@ -496,7 +677,7 @@ function CsvImport({ def, year, mode, onClose, onDone }: { def: TableDef; year: 
   const [error, setError] = useState<string>();
   const [busy, setBusy] = useState(false);
 
-  const importFields = def.key === "kra_rows" && mode === "metric"
+  const importFields = def.tableKey === "kra_rows" && mode === "metric"
     ? [
         { name: "kra", label: "KRA", type: "text" as const, required: true },
         { name: "subgroup", label: "Subgroup", type: "text" as const, nullable: true },
@@ -504,20 +685,26 @@ function CsvImport({ def, year, mode, onClose, onDone }: { def: TableDef; year: 
         { name: "actual", label: "Value", type: "number" as const, nullable: true },
         { name: "sort_order", label: "Sort", type: "number" as const },
       ]
-    : [
-        { name: "kra", label: "KRA", type: "text" as const, required: true },
-        { name: "subgroup", label: "Subgroup", type: "text" as const, nullable: true },
-        { name: "kpi", label: "KPI", type: "text" as const, required: true },
-        { name: "target", label: "Target", type: "number" as const, required: true },
-        { name: "actual", label: "Actual", type: "number" as const, required: true },
-        { name: "pct", label: "% Achieved", type: "number" as const, required: true },
-        { name: "sort_order", label: "Sort", type: "number" as const },
-      ];
+    : def.tableKey === "kra_rows"
+      ? [
+          { name: "kra", label: "KRA", type: "text" as const, required: true },
+          { name: "subgroup", label: "Subgroup", type: "text" as const, nullable: true },
+          { name: "kpi", label: "KPI", type: "text" as const, required: true },
+          { name: "target", label: "Target", type: "number" as const, required: true },
+          { name: "actual", label: "Actual", type: "number" as const, required: true },
+          { name: "pct", label: "% Achieved", type: "number" as const, required: true },
+          { name: "sort_order", label: "Sort", type: "number" as const },
+        ]
+      : def.fields;
 
   const templateHeader = importFields.map((f) => f.name).join(",");
 
   const resolveCsvFieldName = (header: string) => {
-    const normalized = header.trim().toLowerCase().replace(/\s+/g, "_");
+    const normalized = header
+      .replace(/^\uFEFF/, "")
+      .trim()
+      .toLowerCase()
+      .replace(/\s+/g, "_");
     const aliases: Record<string, string> = {
       kra: "kra",
       subgroup: "subgroup",
@@ -528,7 +715,12 @@ function CsvImport({ def, year, mode, onClose, onDone }: { def: TableDef; year: 
       current_value: "actual",
       current: "actual",
       metric_value: "actual",
+      office: "office",
+      office_name: "office",
+      category: "category",
+      stream: "stream",
       pct: "pct",
+      pct_achieved: "pct",
       percent: "pct",
       percentage: "pct",
       sort: "sort_order",
@@ -543,8 +735,8 @@ function CsvImport({ def, year, mode, onClose, onDone }: { def: TableDef; year: 
     try {
       const lines = text.trim().split(/\r?\n/);
       if (lines.length < 2) throw new Error("CSV must have a header row and at least one data row.");
-      const headers = lines[0].split(",").map((h) => h.trim());
-      const rows = lines.slice(1).filter(Boolean).map((line) => {
+      const headers = lines[0].split(",").map((h) => h.trim().replace(/^\uFEFF/, ""));
+      const rows = lines.slice(1).filter(Boolean).map((line, index) => {
         const cells = parseCsvLine(line);
         const obj: any = { year };
         headers.forEach((h, i) => {
@@ -557,14 +749,34 @@ function CsvImport({ def, year, mode, onClose, onDone }: { def: TableDef; year: 
           if (field.type === "number" && v !== null) v = Number(v);
           obj[fieldName] = v;
         });
-        if (def.key === "kra_rows" && mode === "metric") {
+        if (def.tableKey === "kra_rows" && mode === "metric") {
           obj.target = 0;
           obj.actual = obj.actual ?? 0;
           obj.pct = 0;
         }
+        if (def.tableKey === "area_revenue") {
+          const normalizedStream = normalizeRevenueStream(obj.stream, def.mode);
+          const normalizedCategory = normalizeRevenueCategory(obj.category, def.mode);
+          const normalizedOffice = normalizeOfficeName(obj.office);
+          if (!normalizedOffice) throw new Error(`Row ${index + 2} is missing office.`);
+          if (!normalizedStream) throw new Error(`Row ${index + 2} has an invalid stream.`);
+          if (def.mode === "area-office") {
+            const areaOption = AREA_OFFICE_OPTIONS.find((item) => item.name === normalizedOffice);
+            if (!areaOption) throw new Error(`Row ${index + 2} uses an unapproved office name.`);
+            if (normalizedCategory !== areaOption.category) throw new Error(`Row ${index + 2} must use category ${areaOption.category}.`);
+          } else {
+            if (!TRAINING_CENTRE_OPTIONS.includes(normalizedOffice as (typeof TRAINING_CENTRE_OPTIONS)[number])) throw new Error(`Row ${index + 2} uses an unapproved training centre name.`);
+            if (normalizedStream === "Training Contribution") throw new Error(`Row ${index + 2} should use Course Fee or Other Income only.`);
+          }
+          obj.office = normalizedOffice;
+          obj.stream = normalizedStream;
+          obj.category = def.mode === "area-office" ? normalizedCategory : "Training Centre";
+          obj.target = Number(obj.target ?? 0);
+          obj.actual = Number(obj.actual ?? 0);
+        }
         return obj;
       });
-      const { error } = await sb.from(def.key).insert(rows);
+      const { error } = await sb.from(def.tableKey).insert(rows);
       if (error) throw error;
       toast.success(`Imported ${rows.length} row(s)`);
       onDone();
@@ -587,18 +799,43 @@ function CsvImport({ def, year, mode, onClose, onDone }: { def: TableDef; year: 
           <div className="text-xs text-itf-ink/70">
             Paste CSV rows below. First line must be a header with column names.
             <div className="mt-1 text-[11px] font-mono bg-itf-canvas rounded p-2 select-all">{templateHeader}</div>
-            {def.key === "kra_rows" && mode === "metric" && (
+            {def.tableKey === "kra_rows" && mode === "metric" && (
               <div className="mt-2 rounded border border-itf-rule/70 bg-itf-canvas/60 p-2 text-[11px] text-itf-ink/70">
                 Use this mode for KRA 5–7 metric uploads. Enter the value for the selected year and the report will compare it automatically with the previous year.
+              </div>
+            )}
+            {def.tableKey === "area_revenue" && def.mode === "training-centre" && (
+              <div className="mt-2 rounded border border-itf-rule/70 bg-itf-canvas/60 p-2 text-[11px] text-itf-ink/70">
+                Use this tab for training-centre revenue only. Allowed streams are Course Fee and Other Income.
+              </div>
+            )}
+            {def.tableKey === "area_revenue" && def.mode === "area-office" && (
+              <div className="mt-2 rounded border border-itf-rule/70 bg-itf-canvas/60 p-2 text-[11px] text-itf-ink/70">
+                Use this tab for area-office revenue. Categories should be A, B or C.
               </div>
             )}
           </div>
           <textarea rows={10} value={text} onChange={(e) => setText(e.target.value)}
             placeholder={`${templateHeader}\n...`}
             className="w-full rounded border border-itf-rule px-3 py-2 text-sm font-mono" />
-          <input type="file" accept=".csv,text/csv" onChange={async (e) => {
+          <input type="file" accept=".csv,.xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv" onChange={async (e) => {
             const f = e.target.files?.[0];
-            if (f) setText(await f.text());
+            if (!f) return;
+            const name = (f.name || "").toLowerCase();
+            if (name.endsWith('.xlsx') || name.endsWith('.xls')) {
+              try {
+                const ab = await f.arrayBuffer();
+                const XLSX = await import('xlsx');
+                const wb = XLSX.read(ab, { type: 'array' });
+                const first = wb.SheetNames[0];
+                const csv = XLSX.utils.sheet_to_csv(wb.Sheets[first]);
+                setText(csv);
+              } catch (err: any) {
+                setError(`Failed to parse Excel file: ${err?.message ?? String(err)}`);
+              }
+            } else {
+              setText(await f.text());
+            }
           }} className="text-xs" />
           {error && <div className="text-xs text-itf-red">{error}</div>}
         </div>
