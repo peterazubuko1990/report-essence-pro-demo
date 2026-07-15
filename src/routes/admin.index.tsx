@@ -91,7 +91,6 @@ const TABLES: TableDef[] = [
       { name: "kpi", label: "KPI", type: "text", required: true },
       { name: "target", label: "Target", type: "number", required: true },
       { name: "actual", label: "Actual", type: "number", required: true },
-      { name: "pct", label: "% Achieved", type: "number", required: true },
       { name: "sort_order", label: "Sort", type: "number" },
     ] },
   { key: "revenue_rows", label: "Headline Revenue", tableKey: "revenue_rows", order: "sort_order",
@@ -178,7 +177,6 @@ function getKraFormFields(def: TableDef, mode?: KRAImportMode): FieldDef[] {
     { name: "kpi", label: "KPI", type: "text", required: true },
     { name: "target", label: "Target", type: "number", required: true },
     { name: "actual", label: "Actual", type: "number", required: true },
-    { name: "pct", label: "% Achieved", type: "number", required: true },
     { name: "sort_order", label: "Sort", type: "number" },
   ];
 }
@@ -601,10 +599,16 @@ function RowForm({ def, year, mode, initial, onClose, onSaved }: { def: TableDef
       if (f.nullable && (v === "" || v === undefined)) v = null;
       payload[f.name] = v;
     });
+    if (def.tableKey === "kra_rows") {
+      if (payload.target != null && payload.actual != null) {
+        payload.pct = payload.target > 0 ? (payload.actual / payload.target) * 100 : 0;
+      } else {
+        payload.pct = 0;
+      }
+    }
     if (def.tableKey === "kra_rows" && mode === "metric") {
       payload.target = 0;
       payload.actual = payload.actual ?? 0;
-      payload.pct = 0;
     }
     if (def.tableKey === "area_revenue") {
       const normalizedStream = normalizeRevenueStream(values.stream, def.mode);
@@ -703,7 +707,6 @@ function CsvImport({ def, year, mode, onClose, onDone }: { def: TableDef; year: 
           { name: "kpi", label: "KPI", type: "text" as const, required: true },
           { name: "target", label: "Target", type: "number" as const, required: true },
           { name: "actual", label: "Actual", type: "number" as const, required: true },
-          { name: "pct", label: "% Achieved", type: "number" as const, required: true },
           { name: "sort_order", label: "Sort", type: "number" as const },
         ]
       : def.fields;
@@ -730,10 +733,6 @@ function CsvImport({ def, year, mode, onClose, onDone }: { def: TableDef; year: 
       office_name: "office",
       category: "category",
       stream: "stream",
-      pct: "pct",
-      pct_achieved: "pct",
-      percent: "pct",
-      percentage: "pct",
       sort: "sort_order",
       sort_order: "sort_order",
     };
@@ -763,10 +762,16 @@ function CsvImport({ def, year, mode, onClose, onDone }: { def: TableDef; year: 
           if (field.type === "number" && v !== null) v = Number(v);
           obj[fieldName] = v;
         });
+        if (def.tableKey === "kra_rows") {
+          if (obj.target != null && obj.actual != null) {
+            obj.pct = obj.target > 0 ? (obj.actual / obj.target) * 100 : 0;
+          } else {
+            obj.pct = 0;
+          }
+        }
         if (def.tableKey === "kra_rows" && mode === "metric") {
           obj.target = 0;
           obj.actual = obj.actual ?? 0;
-          obj.pct = 0;
         }
         if (def.tableKey === "area_revenue") {
           const normalizedStream = normalizeRevenueStream(obj.stream, def.mode);
