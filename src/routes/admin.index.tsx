@@ -200,7 +200,14 @@ function normalizeRevenueCategory(value?: string | null, mode?: RevenueUploadMod
   const text = String(value ?? "").trim();
   if (!text) return null;
   const upper = text.toUpperCase();
-  if (mode === "area-office") return ["A", "B", "C"].includes(upper) ? upper : null;
+  const compact = upper.replace(/[^A-Z]/g, "");
+  if (mode === "area-office") {
+    if (["A", "B", "C"].includes(compact)) return compact;
+    if (compact === "CATEGORYA") return "A";
+    if (compact === "CATEGORYB") return "B";
+    if (compact === "CATEGORYC") return "C";
+    return null;
+  }
   return "Training Centre";
 }
 
@@ -218,8 +225,8 @@ function buildRevenueTemplateCsv(def: TableDef): string {
             office: office.name,
             category: office.category,
             stream,
-            target: "",
-            actual: "",
+            target: 0,
+            actual: 0,
           };
           const row = fields.map((f) => escapeCsv(exampleRow[f.name] ?? "")).join(",");
           lines.push(row);
@@ -232,8 +239,8 @@ function buildRevenueTemplateCsv(def: TableDef): string {
           const exampleRow: Record<string, any> = {
             office: centre,
             stream,
-            target: "",
-            actual: "",
+            target: 0,
+            actual: 0,
           };
           const row = fields.map((f) => escapeCsv(exampleRow[f.name] ?? "")).join(",");
           lines.push(row);
@@ -257,6 +264,10 @@ function escapeCsv(value: unknown) {
   const text = value == null ? "" : String(value);
   const escaped = text.replace(/"/g, '""');
   return /[",\r\n]/.test(escaped) ? `"${escaped}"` : escaped;
+}
+
+function isMeaningfulCsvRow(cells: string[]) {
+  return cells.some((cell) => cell.trim() !== "");
 }
 
 async function fetchLatestKraRowsForMode(mode: KRAImportMode) {
@@ -733,18 +744,21 @@ function CsvImport({ def, year, mode, onClose, onDone }: { def: TableDef; year: 
     setError(undefined);
     setBusy(true);
     try {
-      const lines = text.trim().split(/\r?\n/);
+      const normalizedText = text.replace(/^\uFEFF/, "").trim();
+      const lines = normalizedText.split(/\r?\n/).filter((line, index) => index === 0 || line.trim() !== "");
       if (lines.length < 2) throw new Error("CSV must have a header row and at least one data row.");
-      const headers = lines[0].split(",").map((h) => h.trim().replace(/^\uFEFF/, ""));
-      const rows = lines.slice(1).filter(Boolean).map((line, index) => {
+      const headers = parseCsvLine(lines[0]).map((h) => h.trim().replace(/^\uFEFF/, ""));
+      const rows: any[] = [];
+      lines.slice(1).forEach((line, index) => {
         const cells = parseCsvLine(line);
+        if (!isMeaningfulCsvRow(cells)) return;
         const obj: any = { year };
         headers.forEach((h, i) => {
           const fieldName = resolveCsvFieldName(h);
           if (!fieldName) return;
           const field = importFields.find((f) => f.name === fieldName);
           if (!field) return;
-          let v: any = cells[i];
+          let v: any = cells[i] ?? "";
           if (v === undefined || v === "") v = null;
           if (field.type === "number" && v !== null) v = Number(v);
           obj[fieldName] = v;
@@ -758,6 +772,7 @@ function CsvImport({ def, year, mode, onClose, onDone }: { def: TableDef; year: 
           const normalizedStream = normalizeRevenueStream(obj.stream, def.mode);
           const normalizedCategory = normalizeRevenueCategory(obj.category, def.mode);
           const normalizedOffice = normalizeOfficeName(obj.office);
+          if (!normalizedOffice && !obj.stream && !obj.target && !obj.actual) return;
           if (!normalizedOffice) throw new Error(`Row ${index + 2} is missing office.`);
           if (!normalizedStream) throw new Error(`Row ${index + 2} has an invalid stream.`);
           if (def.mode === "area-office") {
@@ -774,7 +789,7 @@ function CsvImport({ def, year, mode, onClose, onDone }: { def: TableDef; year: 
           obj.target = Number(obj.target ?? 0);
           obj.actual = Number(obj.actual ?? 0);
         }
-        return obj;
+        rows.push(obj);
       });
       const { error } = await sb.from(def.tableKey).insert(rows);
       if (error) throw error;
