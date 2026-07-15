@@ -13,7 +13,6 @@ const nav = [
   { to: "/analytics", label: "Visual Analytics" },
   { to: "/detailed", label: "Detailed Analysis" },
   { to: "/insights", label: "Management Insights" },
-  { to: "/validation", label: "Data Validation" },
 ];
 
 

@@ -115,6 +115,7 @@ function ExecutiveOverview() {
           previousYear={prevYear}
           formatValue={fmtNaira}
           tone={totalGrowth === null ? "neutral" : totalGrowth >= 0 ? "good" : "bad"}
+          noteText="This total combines the live revenue streams and includes training-centre income in the stream totals."
         />
 
         {/* Training Contribution */}
@@ -126,9 +127,8 @@ function ExecutiveOverview() {
             currentYear={year}
             previousYear={prevYear}
             formatValue={fmtNaira}
-            showTarget={true}
-            targetValue={`${Number(tc.pct ?? 0).toFixed(1)}% of target`}
             tone={kpiTone(Number(tc.pct ?? 0))}
+            noteText="This stream includes training-centre revenue in the headline total, but those rows are not treated as normal office/state entries in the map or office breakdowns."
           />
         )}
 
@@ -141,9 +141,8 @@ function ExecutiveOverview() {
             currentYear={year}
             previousYear={prevYear}
             formatValue={fmtNaira}
-            showTarget={true}
-            targetValue={`${Number(cf.pct ?? 0).toFixed(1)}% of target`}
             tone={kpiTone(Number(cf.pct ?? 0))}
+            noteText="This card reflects the live Course Fee stream total for the selected year and includes training-centre values in the stream total."
           />
         )}
 
@@ -156,9 +155,8 @@ function ExecutiveOverview() {
             currentYear={year}
             previousYear={prevYear}
             formatValue={fmtNaira}
-            showTarget={true}
-            targetValue={`${Number(oi.pct ?? 0).toFixed(1)}% of target`}
             tone={kpiTone(Number(oi.pct ?? 0))}
+            noteText="This card reflects the live Other Income stream total for the selected year and includes training-centre values in the stream total."
           />
         )}
 
@@ -171,6 +169,7 @@ function ExecutiveOverview() {
           previousYear={prevYear}
           formatValue={(v) => v.toLocaleString()}
           tone={prevYear && pTrainedPrev > 0 ? (growth(pTrainedCur, pTrainedPrev) >= 0 ? "good" : "bad") : "neutral"}
+          noteText="This is a headline participation count drawn from the current KRA 6 programme rows."
         />
 
         {/* KRAs Reported */}
@@ -183,6 +182,7 @@ function ExecutiveOverview() {
           formatValue={(v) => String(v)}
           isPositiveGood={true}
           tone={prevYear && kraPrev.length > 0 ? (kraRows.length >= kraPrev.length ? "good" : "warn") : "neutral"}
+          noteText="This counts the KRA rows loaded for the selected year. It is a reporting count rather than a performance score."
         />
 
         {/* Revenue Streams */}
@@ -195,6 +195,7 @@ function ExecutiveOverview() {
           formatValue={(v) => String(v)}
           isPositiveGood={true}
           tone="neutral"
+          noteText="This counts the headline revenue streams available in the current dataset."
         />
 
         {/* Target Achievement */}
@@ -206,6 +207,7 @@ function ExecutiveOverview() {
           previousYear={prevYear}
           formatValue={(v) => `${v.toFixed(1)}%`}
           tone={kpiTone(totalPct)}
+          noteText="Achievement is calculated as Actual ÷ Target × 100. It is a ratio view, not a stand-alone performance verdict."
         />
       </div>
 

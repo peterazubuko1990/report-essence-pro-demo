@@ -6,7 +6,7 @@ import { ChartCard, ChartRenderer } from "@/components/dashboard/ChartKit";
 import { supabase } from "@/integrations/supabase/client";
 import { useYear } from "@/lib/year-context";
 import { fmtNaira } from "@/data/itf2024";
-import { buildRevenueAggregation } from "@/lib/revenue-data";
+import { buildRevenueAggregation, inferRevenueMode } from "@/lib/revenue-data";
 
 export const Route = createFileRoute("/analytics")({
   head: () => ({ meta: [{ title: "Visual Analytics · ITF Scorecard" }] }),
@@ -37,8 +37,11 @@ function AnalyticsPage() {
     queryFn: async () => (await supabase.from("kra_rows").select("*").eq("kra", "KRA 6").eq("year", year).order("sort_order")).data ?? [],
   });
 
+  const areaOfficeRows = areaRev.filter((row: any) => inferRevenueMode(row) === "area-office");
+  const allAreaOfficeRows = allAreaRev.filter((row: any) => inferRevenueMode(row) === "area-office");
+
   const officeTotals = Object.values(
-    areaRev.reduce<Record<string, { office: string; category: string; actual: number; target: number }>>((acc, r) => {
+    areaOfficeRows.reduce<Record<string, { office: string; category: string; actual: number; target: number }>>((acc, r) => {
       const k = r.office;
       acc[k] = acc[k] || { office: r.office, category: r.category, actual: 0, target: 0 };
       acc[k].actual += Number(r.actual || 0);
@@ -51,7 +54,7 @@ function AnalyticsPage() {
   const bottomOffices = officeTotals.slice(-10).reverse().map((o) => ({ ...o, actualM: +(o.actual / 1e6).toFixed(1) }));
 
   const byCategory = ["A", "B", "C"].map((cat) => {
-    const rows = areaRev.filter((r) => r.category === cat);
+    const rows = areaOfficeRows.filter((r) => r.category === cat);
     return {
       category: `Cat ${cat}`,
       "Training Contribution": +(rows.filter((r) => r.stream === "Training Contribution").reduce((s, r) => s + Number(r.actual || 0), 0) / 1e9).toFixed(2),
@@ -70,7 +73,7 @@ function AnalyticsPage() {
     .map((t) => ({ programme: t.kpi, participants: Number(t.actual ?? 0) }));
 
   const yearlyTrend = years.map((y) => {
-    const yr = allAreaRev.filter((r) => r.year === y);
+    const yr = allAreaRev.filter((row: any) => row.year === y);
     const aggregation = buildRevenueAggregation(yr, []);
     const totals = Object.fromEntries(aggregation.totals.map((row) => [row.stream, row]));
     return {
@@ -83,7 +86,7 @@ function AnalyticsPage() {
 
   const prevYear = years[years.indexOf(year) - 1] ?? years[0];
   const officeCompare = topOffices.slice(0, 8).map((o) => {
-    const prev = allAreaRev.filter((r) => r.office === o.office && r.year === prevYear).reduce((s, r) => s + Number(r.actual || 0), 0);
+    const prev = allAreaOfficeRows.filter((row: any) => row.office === o.office && row.year === prevYear).reduce((s, r) => s + Number(r.actual || 0), 0);
     return { office: o.office, [`${prevYear}`]: +(prev / 1e9).toFixed(2), [`${year}`]: +(o.actual / 1e9).toFixed(2) } as any;
   });
 

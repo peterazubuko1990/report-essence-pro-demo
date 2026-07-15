@@ -1,11 +1,14 @@
 import { useMemo, useState, type MouseEvent } from "react";
 import { fmtNaira } from "@/data/itf2024";
+import { inferRevenueMode } from "@/lib/revenue-data";
 import { NIGERIA_MAP } from "./nigeria-map-data";
 
 type StreamKey = "Training Contribution" | "Course Fee" | "Other Income";
 
 type RevenueRow = {
   office?: string | null;
+  category?: string | null;
+  revenue_source?: string | null;
   stream?: string | null;
   actual?: number | null;
   target?: number | null;
@@ -139,6 +142,9 @@ export function NigeriaRevenueMap({ rows }: { rows: RevenueRow[] }) {
     const seenOffice = new Map<string, Set<string>>();
 
     for (const row of rows) {
+      const mode = inferRevenueMode(row);
+      if (mode === "training-centre") continue;
+
       const office = String(row.office ?? "").trim();
       if (!office) continue;
       const state = getStateFromOffice(office);

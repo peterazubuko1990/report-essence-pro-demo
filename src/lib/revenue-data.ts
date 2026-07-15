@@ -7,6 +7,7 @@ export interface RevenueRowLike {
   target?: number | null;
   actual?: number | null;
   year?: number | null;
+  revenue_source?: string | null;
 }
 
 export interface RevenueStreamSummary {
@@ -56,9 +57,20 @@ function normalizeCategory(value?: string | null) {
   return String(value ?? "").trim().toUpperCase();
 }
 
+export function inferRevenueMode(row: RevenueRowLike): "area-office" | "training-centre" | null {
+  const source = String(row.revenue_source ?? "").trim().toLowerCase();
+  if (source === "training-centre") return "training-centre";
+  if (source === "area-office") return "area-office";
+  const category = normalizeCategory(row.category);
+  if (category === "TRAINING CENTRE") return "training-centre";
+  if (CATEGORY_ORDER.includes(category as (typeof CATEGORY_ORDER)[number])) return "area-office";
+  const office = String(row.office ?? "").trim();
+  if (office === "Centre for Excellence" || office === "ISTC Ikeja" || office === "ISTC Kano" || office === "ISTC Lokoja" || office === "MSTC Abuja" || office === "Staff School" || office === "Corporate Office Abuja") return "training-centre";
+  return null;
+}
+
 function isTrainingCentre(row: RevenueRowLike) {
-  const cat = normalizeCategory(row.category);
-  return !CATEGORY_ORDER.includes(cat as (typeof CATEGORY_ORDER)[number]) && Boolean(row.office);
+  return inferRevenueMode(row) === "training-centre";
 }
 
 function buildStreamSummary(rows: RevenueRowLike[], previousRows: RevenueRowLike[], stream: RevenueStream): RevenueStreamSummary {
@@ -81,19 +93,22 @@ function buildStreamSummary(rows: RevenueRowLike[], previousRows: RevenueRowLike
 }
 
 function buildSectionForCategory(category: string, currentRows: RevenueRowLike[], previousRows: RevenueRowLike[]): RevenueSectionSummary {
+  const areaOfficeCurrentRows = currentRows.filter((row) => inferRevenueMode(row) === "area-office");
+  const areaOfficePreviousRows = previousRows.filter((row) => inferRevenueMode(row) === "area-office");
+
   const rows = STREAMS.map((stream) => buildStreamSummary(
-    currentRows.filter((row) => normalizeCategory(row.category) === category && normalizeStream(row.stream) === stream),
-    previousRows.filter((row) => normalizeCategory(row.category) === category && normalizeStream(row.stream) === stream),
+    areaOfficeCurrentRows.filter((row) => normalizeCategory(row.category) === category && normalizeStream(row.stream) === stream),
+    areaOfficePreviousRows.filter((row) => normalizeCategory(row.category) === category && normalizeStream(row.stream) === stream),
     stream,
   )).filter((row) => row.actual > 0 || row.target > 0 || row.previousActual > 0 || row.previousTarget > 0);
 
   const offices = Array.from(new Map(
-    currentRows.filter((row) => normalizeCategory(row.category) === category && Boolean(row.office)).map((row) => [String(row.office ?? "").trim(), [] as RevenueRowLike[]]),
+    areaOfficeCurrentRows.filter((row) => normalizeCategory(row.category) === category && Boolean(row.office)).map((row) => [String(row.office ?? "").trim(), [] as RevenueRowLike[]]),
   ).keys());
 
   const breakdown = offices.map((office) => {
-    const officeCurrentRows = currentRows.filter((row) => normalizeCategory(row.category) === category && String(row.office ?? "").trim() === office);
-    const officePreviousRows = previousRows.filter((row) => normalizeCategory(row.category) === category && String(row.office ?? "").trim() === office);
+    const officeCurrentRows = areaOfficeCurrentRows.filter((row) => normalizeCategory(row.category) === category && String(row.office ?? "").trim() === office);
+    const officePreviousRows = areaOfficePreviousRows.filter((row) => normalizeCategory(row.category) === category && String(row.office ?? "").trim() === office);
     const streams = STREAMS.map((stream) => buildStreamSummary(
       officeCurrentRows.filter((row) => normalizeStream(row.stream) === stream),
       officePreviousRows.filter((row) => normalizeStream(row.stream) === stream),
@@ -120,41 +135,13 @@ function buildSectionForCategory(category: string, currentRows: RevenueRowLike[]
 }
 
 function buildTrainingCentreSections(currentRows: RevenueRowLike[], previousRows: RevenueRowLike[]): RevenueSectionSummary[] {
-  const centres = new Map<string, RevenueRowLike[]>();
-  for (const row of currentRows.filter(isTrainingCentre)) {
-    const office = String(row.office ?? "Training Centre").trim();
-    const items = centres.get(office) ?? [];
-    items.push(row);
-    centres.set(office, items);
-  }
-
-  return Array.from(centres.entries()).map(([office, rows]) => {
-    const prevRows = previousRows.filter((row) => isTrainingCentre(row) && String(row.office ?? "Training Centre").trim() === office);
-    const streamRows = STREAMS.map((stream) => buildStreamSummary(rows.filter((row) => normalizeStream(row.stream) === stream), prevRows.filter((row) => normalizeStream(row.stream) === stream), stream))
-      .filter((row) => row.actual > 0 || row.target > 0 || row.previousActual > 0 || row.previousTarget > 0);
-
-    return {
-      id: `training-centre-${office}`,
-      title: office,
-      kind: "training-centre",
-      rows: streamRows,
-      breakdown: [{
-        office,
-        currentActual: streamRows.reduce((sum, row) => sum + row.actual, 0),
-        currentTarget: streamRows.reduce((sum, row) => sum + row.target, 0),
-        previousActual: streamRows.reduce((sum, row) => sum + row.previousActual, 0),
-        previousTarget: streamRows.reduce((sum, row) => sum + row.previousTarget, 0),
-        streams: streamRows,
-      }],
-    };
-  });
+  return [];
 }
 
 export function buildRevenueAggregation(currentRows: RevenueRowLike[], previousRows: RevenueRowLike[] = []): RevenueAggregation {
   const totals = STREAMS.map((stream) => buildStreamSummary(currentRows, previousRows, stream));
   const sections = [
     ...CATEGORY_ORDER.map((category) => buildSectionForCategory(category, currentRows, previousRows)),
-    ...buildTrainingCentreSections(currentRows, previousRows),
   ];
 
   return { totals, sections };

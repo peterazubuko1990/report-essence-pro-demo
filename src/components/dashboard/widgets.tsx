@@ -39,6 +39,7 @@ export function EnhancedKpi({
   tone = "neutral",
   showTarget = false,
   targetValue,
+  noteText,
 }: {
   label: string;
   currentValue: number;
@@ -50,6 +51,7 @@ export function EnhancedKpi({
   tone?: "good" | "bad" | "warn" | "neutral";
   showTarget?: boolean;
   targetValue?: string;
+  noteText?: string;
 }) {
   const borderColor =
     tone === "good" ? "border-l-itf-green" :
@@ -131,12 +133,17 @@ export function EnhancedKpi({
         <div className="text-[12px] text-itf-ink/50 italic py-2">No previous year data available</div>
       )}
 
-      {/* Target Achievement (if applicable) */}
-      {showTarget && targetValue && (
+      {/* Presenter note / target context */}
+      {noteText ? (
+        <div className="mt-4 pt-3 border-t border-itf-rule/30">
+          <div className="text-[10px] uppercase tracking-[0.12em] text-itf-gold font-semibold mb-1">Presenter note</div>
+          <div className="text-[11px] leading-relaxed text-itf-ink/70">{noteText}</div>
+        </div>
+      ) : showTarget && targetValue ? (
         <div className="mt-4 pt-3 border-t border-itf-rule/30 text-[11px] font-medium text-itf-ink/70">
           Target: <span className="text-itf-ink font-semibold">{targetValue}</span>
         </div>
-      )}
+      ) : null}
     </div>
   );
 }

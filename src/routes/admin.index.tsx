@@ -70,6 +70,15 @@ const TRAINING_CENTRE_OPTIONS = [
 ] as const;
 
 const REVENUE_STREAM_OPTIONS = ["Training Contribution", "Course Fee", "Other Income"] as const;
+const TRAINING_CENTRE_OFFICES = [
+  "Centre for Excellence",
+  "ISTC Ikeja",
+  "ISTC Kano",
+  "ISTC Lokoja",
+  "MSTC Abuja",
+  "Staff School",
+  "Corporate Office Abuja",
+] as const;
 
 function normalizeOfficeName(value?: string | null) {
   const text = String(value ?? "").trim();
@@ -207,6 +216,23 @@ function normalizeRevenueCategory(value?: string | null, mode?: RevenueUploadMod
     return null;
   }
   return "Training Centre";
+}
+
+function inferRevenueRowSource(row: Record<string, any>): RevenueUploadMode | null {
+  const source = String(row?.revenue_source ?? "").trim().toLowerCase();
+  if (source === "training-centre") return "training-centre";
+  if (source === "area-office") return "area-office";
+  const category = String(row?.category ?? "").trim();
+  if (category.toLowerCase() === "training centre") return "training-centre";
+  if (["A", "B", "C"].includes(category.toUpperCase())) return "area-office";
+  const office = String(row?.office ?? "").trim();
+  if (TRAINING_CENTRE_OFFICES.includes(office as (typeof TRAINING_CENTRE_OFFICES)[number])) return "training-centre";
+  return null;
+}
+
+function filterRevenueRowsByMode(rows: Record<string, any>[], mode?: RevenueUploadMode) {
+  if (!mode) return rows;
+  return rows.filter((row) => inferRevenueRowSource(row) === mode);
 }
 
 function buildRevenueTemplateCsv(def: TableDef): string {
@@ -415,8 +441,9 @@ function TableEditor({ def, year }: { def: TableDef; year: number }) {
   const allRows = query.data ?? [];
   const rows = def.tableKey === "kra_rows"
     ? allRows.filter((row: any) => isKraRowInScope(row.kra, def.tableKey === "kra_rows" ? kraImportMode : undefined))
-    : allRows;
+    : filterRevenueRowsByMode(allRows, def.mode);
   const visibleFields = getFormFields(def, def.tableKey === "kra_rows" ? kraImportMode : undefined);
+  const allowMultiSelect = def.tableKey === "kra_rows" || def.tableKey === "area_revenue";
 
   const invalidateAll = () => {
     qc.invalidateQueries({ queryKey: [def.key, year] });
@@ -519,7 +546,7 @@ function TableEditor({ def, year }: { def: TableDef; year: number }) {
           {(def.tableKey === "kra_rows" || def.tableKey === "area_revenue") && (
             <button onClick={downloadTemplate} className="rounded border border-itf-rule px-3 py-1.5 text-xs font-medium hover:bg-itf-canvas">↓ Download Template</button>
           )}
-          {def.tableKey === "kra_rows" && (
+          {allowMultiSelect && (
             <button onClick={removeSelected} disabled={!selectedIds.length} className="rounded border border-itf-red/40 px-3 py-1.5 text-xs font-medium text-itf-red hover:bg-itf-red/5 disabled:opacity-50">🗑 Delete Selected</button>
           )}
           <button onClick={() => setCsvOpen(true)} className="rounded border border-itf-rule px-3 py-1.5 text-xs font-medium hover:bg-itf-canvas">↑ Import CSV</button>
@@ -531,7 +558,7 @@ function TableEditor({ def, year }: { def: TableDef; year: number }) {
         <table className="w-full text-sm">
           <thead className="bg-itf-canvas text-[11px] uppercase tracking-wider text-itf-ink/60">
             <tr>
-              {def.key === "kra_rows" && (
+              {allowMultiSelect && (
                 <th className="px-3 py-2 w-10">
                   <input type="checkbox" checked={selectedIds.length > 0 && rows.length > 0 && selectedIds.length === rows.length} onChange={() => {
                     if (selectedIds.length === rows.length) setSelectedIds([]);
@@ -546,7 +573,7 @@ function TableEditor({ def, year }: { def: TableDef; year: number }) {
           <tbody>
             {rows.map((r: any) => (
               <tr key={r.id} className="border-t border-itf-rule/60">
-                {def.tableKey === "kra_rows" && (
+                {allowMultiSelect && (
                   <td className="px-3 py-2">
                     <input type="checkbox" checked={selectedIds.includes(r.id)} onChange={() => toggleSelect(r.id)} className="h-4 w-4 rounded border-itf-rule" />
                   </td>
