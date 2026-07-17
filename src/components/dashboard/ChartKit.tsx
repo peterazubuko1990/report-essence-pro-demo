@@ -20,6 +20,48 @@ const KINDS: { k: ChartKind; label: string; Icon: any }[] = [
 
 const COLORS = ["#00723F", "#C8102E", "#E6B422", "#1F6FB2", "#7a8a99", "#6d4c41", "#4b5563"];
 
+function TooltipContent({ active, payload, label, unit }: { active?: boolean; payload?: Array<any>; label?: string | number; unit?: string }) {
+  if (!active || !payload?.length) return null;
+
+  const formatValue = (value: unknown) => {
+    const num = Number(value ?? 0);
+    if (!Number.isFinite(num)) return "—";
+    const precision = unit === "%" ? 1 : 0;
+    return `${num.toFixed(precision)}${unit ?? ""}`;
+  };
+
+  return (
+    <div className="rounded-lg border border-itf-rule bg-white/95 px-3 py-2 text-sm shadow-lg">
+      <div className="mb-2 font-semibold text-itf-ink">{label ?? "Value"}</div>
+      <div className="space-y-1">
+        {payload.map((entry, index) => {
+          const currentValue = Number(entry.value ?? 0);
+          const prevValue = index > 0 ? Number(payload[index - 1].value ?? 0) : null;
+          const pctChange = prevValue !== null && prevValue !== 0 && Number.isFinite(currentValue) && Number.isFinite(prevValue)
+            ? ((currentValue - prevValue) / prevValue) * 100
+            : null;
+
+          const tone = pctChange !== null && pctChange > 0 ? "text-itf-green" : pctChange !== null && pctChange < 0 ? "text-itf-red" : "text-itf-ink/70";
+
+          return (
+            <div key={`${entry.dataKey ?? entry.name ?? index}`} className="flex items-center justify-between gap-3">
+              <span className="font-medium text-itf-ink/70">{entry.name ?? entry.dataKey}</span>
+              <div className="text-right">
+                <div className="font-semibold text-itf-ink">{formatValue(entry.value)}</div>
+                {pctChange !== null && (
+                  <div className={`text-[11px] font-semibold ${tone}`}>
+                    {pctChange > 0 ? "▲" : pctChange < 0 ? "▼" : "•"} {Math.abs(pctChange).toFixed(1)}%
+                  </div>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 export function ChartTypeSelector({
   value, onChange, allow,
 }: { value: ChartKind; onChange: (k: ChartKind) => void; allow?: ChartKind[] }) {
@@ -76,7 +118,7 @@ export function ChartRenderer({
             <CartesianGrid stroke="#e5e7eb" vertical={false} />
             <XAxis dataKey={xKey} tick={{ fontSize: 13, fontWeight: 600 }} angle={-15} textAnchor="end" />
             <YAxis tick={{ fontSize: 13, fontWeight: 600 }} unit={unit} />
-            <Tooltip />
+            <Tooltip content={<TooltipContent unit={unit} />} />
             <Legend wrapperStyle={{ fontSize: 13, fontWeight: 600 }} />
             {series.map((s, i) => <Bar key={s} dataKey={s} fill={colors[i % colors.length]} />)}
           </BarChart>
@@ -85,7 +127,7 @@ export function ChartRenderer({
             <CartesianGrid stroke="#e5e7eb" vertical={false} />
             <XAxis dataKey={xKey} tick={{ fontSize: 13, fontWeight: 600 }} angle={-15} textAnchor="end" />
             <YAxis tick={{ fontSize: 13, fontWeight: 600 }} unit={unit} />
-            <Tooltip />
+            <Tooltip content={<TooltipContent unit={unit} />} />
             <Legend wrapperStyle={{ fontSize: 13, fontWeight: 600 }} />
             {series.map((s, i) => <Line key={s} type="monotone" dataKey={s} stroke={colors[i % colors.length]} strokeWidth={2} dot />)}
           </LineChart>
@@ -94,7 +136,7 @@ export function ChartRenderer({
             <CartesianGrid stroke="#e5e7eb" vertical={false} />
             <XAxis dataKey={xKey} tick={{ fontSize: 13, fontWeight: 600 }} angle={-15} textAnchor="end" />
             <YAxis tick={{ fontSize: 13, fontWeight: 600 }} unit={unit} />
-            <Tooltip />
+            <Tooltip content={<TooltipContent unit={unit} />} />
             <Legend wrapperStyle={{ fontSize: 13, fontWeight: 600 }} />
             {series.map((s, i) => <Area key={s} type="monotone" dataKey={s} fill={colors[i % colors.length]} stroke={colors[i % colors.length]} fillOpacity={0.35} />)}
           </AreaChart>
@@ -114,7 +156,7 @@ export function ChartRenderer({
             {series.map((s, i) => (
               <Radar key={s} name={s} dataKey={s} stroke={colors[i % colors.length]} fill={colors[i % colors.length]} fillOpacity={0.35} />
             ))}
-            <Tooltip />
+            <Tooltip content={<TooltipContent unit={unit} />} />
             <Legend />
           </RadarChart>
         )}
