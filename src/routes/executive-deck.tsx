@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
 import { Note, Section } from "@/components/dashboard/widgets";
 import { headlineRevenue, fmtNaira, growth, trainingTotals, challenges, wayForward, staffSchool } from "@/data/itf2024";
+import { useYear } from "@/lib/year-context";
 import { useState } from "react";
 
 export const Route = createFileRoute("/executive-deck")({
@@ -19,19 +20,21 @@ export const Route = createFileRoute("/executive-deck")({
 interface SlideDef { kicker: string; title: string; body: React.ReactNode; notes: string }
 
 function ExecutiveDeck() {
+  const { year } = useYear();
+  const prevYear = year > 0 ? year - 1 : new Date().getFullYear() - 1;
   const tc = headlineRevenue[0]; const cf = headlineRevenue[1]; const oi = headlineRevenue[2];
   const slides: SlideDef[] = [
     {
       kicker: "Cover",
-      title: "2024 Corporate Scorecard",
+      title: `${year} Corporate Scorecard`,
       body: (
         <div className="text-center">
           <img src='/itf-logo.jpeg' alt="ITF logo" className="h-32 w-32 mx-auto rounded-full bg-white p-1 shadow" />
           <div className="mt-6 text-3xl font-bold text-itf-green">Industrial Training Fund</div>
           <div className="text-sm uppercase tracking-[0.25em] text-itf-red mt-2">Federal Government of Nigeria</div>
-          <div className="mt-8 text-lg">2024 End-of-Year Corporate Scorecard — Executive Briefing</div>
+          <div className="mt-8 text-lg">{year} End-of-Year Corporate Scorecard — Executive Briefing</div>
           <div className="mt-2 text-sm text-itf-ink/70">Presented by: Mr. Udeme V. Akpabio, Director, Corporate Planning Department</div>
-          <div className="mt-1 text-sm text-itf-ink/70">January – December 2024</div>
+          <div className="mt-1 text-sm text-itf-ink/70">January – December {year}</div>
         </div>
       ),
       notes: "Open with the Fund's mandate and the reporting period. This deck is a 10-slide condensation of the 69-slide end-of-year report.",
@@ -55,7 +58,7 @@ function ExecutiveDeck() {
     },
     {
       kicker: "Executive Summary",
-      title: "2024 in one minute",
+      title: `${year} in one minute`,
       body: (
         <ul className="space-y-3 text-base leading-relaxed">
           <li><b className="text-itf-green">Revenue:</b> Total generated revenue rose to <b>{fmtNaira(tc.actual24 + cf.actual24 + oi.actual24)}</b>, driven by Training Contribution of <b>{fmtNaira(tc.actual24)}</b> (110.7% of target).</li>
@@ -68,7 +71,7 @@ function ExecutiveDeck() {
     },
     {
       kicker: "Performance Overview",
-      title: "Revenue — 2023 vs 2024",
+      title: `Revenue — ${prevYear} vs ${year}`,
       body: (
         <div>
           <div className="grid grid-cols-3 gap-4 text-center">
@@ -127,7 +130,7 @@ function ExecutiveDeck() {
     },
     {
       kicker: "Major Achievements",
-      title: "What worked in 2024",
+      title: `What worked in ${year}`,
       body: (
         <ul className="space-y-2 list-disc pl-5 text-base">
           <li>Training Contribution exceeded target by ₦6.23 B.</li>
@@ -151,7 +154,7 @@ function ExecutiveDeck() {
     },
     {
       kicker: "Way Forward",
-      title: "Recommendations for 2025",
+      title: `Recommendations for ${year + 1}`,
       body: (
         <ul className="space-y-2 list-disc pl-5 text-base">
           {wayForward.map((w) => <li key={w}>{w}</li>)}
@@ -166,7 +169,7 @@ function ExecutiveDeck() {
         <div className="text-center mt-6">
           <img src='/itf-logo.jpeg' alt="ITF logo" className="h-24 w-24 mx-auto rounded-full bg-white p-1 shadow" />
           <p className="mt-6 text-base max-w-2xl mx-auto leading-relaxed">
-            2024 was a challenging year for the Fund, but field officers recorded an impressive performance. Their resilience, commitment, loyalty, teamwork and professionalism is highly commendable.
+            {year} was a challenging year for the Fund, but field officers recorded an impressive performance. Their resilience, commitment, loyalty, teamwork and professionalism is highly commendable.
           </p>
           <div className="mt-8 text-itf-red text-3xl font-bold tracking-wider">THANK YOU</div>
         </div>
@@ -179,7 +182,7 @@ function ExecutiveDeck() {
   const s = slides[i];
 
   return (
-    <DashboardLayout title="Executive Presentation" subtitle="A 10-slide condensation of the 69-slide End-of-Year report, preserving ITF corporate identity. Navigate with the buttons below — every slide has its presenter note.">
+    <DashboardLayout title={`Executive Presentation · ${year} Corporate Scorecard`} subtitle={`A 10-slide condensation of the ${year} End-of-Year report, preserving ITF corporate identity. Navigate with the buttons below — every slide has its presenter note.`}>
       <div className="bg-white border border-itf-rule rounded shadow-sm overflow-hidden">
         <div className="bg-itf-green text-white px-5 py-3 flex items-center gap-4">
           <img src='/itf-logo.jpeg' alt="" className="h-9 w-9 rounded-full bg-white p-0.5" />
