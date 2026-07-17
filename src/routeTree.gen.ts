@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as ValidationRouteImport } from './routes/validation'
 import { Route as TrainingRouteImport } from './routes/training'
+import { Route as StaffSchoolRouteImport } from './routes/staff-school'
 import { Route as RevenueRouteImport } from './routes/revenue'
 import { Route as ProjectionsRouteImport } from './routes/projections'
 import { Route as InsightsRouteImport } from './routes/insights'
@@ -35,6 +36,11 @@ const ValidationRoute = ValidationRouteImport.update({
 const TrainingRoute = TrainingRouteImport.update({
   id: '/training',
   path: '/training',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const StaffSchoolRoute = StaffSchoolRouteImport.update({
+  id: '/staff-school',
+  path: '/staff-school',
   getParentRoute: () => rootRouteImport,
 } as any)
 const RevenueRoute = RevenueRouteImport.update({
@@ -123,6 +129,7 @@ export interface FileRoutesByFullPath {
   '/insights': typeof InsightsRoute
   '/projections': typeof ProjectionsRoute
   '/revenue': typeof RevenueRoute
+  '/staff-school': typeof StaffSchoolRoute
   '/training': typeof TrainingRoute
   '/validation': typeof ValidationRoute
   '/admin/forgot': typeof AdminForgotRoute
@@ -141,6 +148,7 @@ export interface FileRoutesByTo {
   '/insights': typeof InsightsRoute
   '/projections': typeof ProjectionsRoute
   '/revenue': typeof RevenueRoute
+  '/staff-school': typeof StaffSchoolRoute
   '/training': typeof TrainingRoute
   '/validation': typeof ValidationRoute
   '/admin/forgot': typeof AdminForgotRoute
@@ -161,6 +169,7 @@ export interface FileRoutesById {
   '/insights': typeof InsightsRoute
   '/projections': typeof ProjectionsRoute
   '/revenue': typeof RevenueRoute
+  '/staff-school': typeof StaffSchoolRoute
   '/training': typeof TrainingRoute
   '/validation': typeof ValidationRoute
   '/admin/forgot': typeof AdminForgotRoute
@@ -182,6 +191,7 @@ export interface FileRouteTypes {
     | '/insights'
     | '/projections'
     | '/revenue'
+    | '/staff-school'
     | '/training'
     | '/validation'
     | '/admin/forgot'
@@ -200,6 +210,7 @@ export interface FileRouteTypes {
     | '/insights'
     | '/projections'
     | '/revenue'
+    | '/staff-school'
     | '/training'
     | '/validation'
     | '/admin/forgot'
@@ -219,6 +230,7 @@ export interface FileRouteTypes {
     | '/insights'
     | '/projections'
     | '/revenue'
+    | '/staff-school'
     | '/training'
     | '/validation'
     | '/admin/forgot'
@@ -239,6 +251,7 @@ export interface RootRouteChildren {
   InsightsRoute: typeof InsightsRoute
   ProjectionsRoute: typeof ProjectionsRoute
   RevenueRoute: typeof RevenueRoute
+  StaffSchoolRoute: typeof StaffSchoolRoute
   TrainingRoute: typeof TrainingRoute
   ValidationRoute: typeof ValidationRoute
   PerformanceKraRoute: typeof PerformanceKraRoute
@@ -259,6 +272,13 @@ declare module '@tanstack/react-router' {
       path: '/training'
       fullPath: '/training'
       preLoaderRoute: typeof TrainingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/staff-school': {
+      id: '/staff-school'
+      path: '/staff-school'
+      fullPath: '/staff-school'
+      preLoaderRoute: typeof StaffSchoolRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/revenue': {
@@ -395,6 +415,7 @@ const rootRouteChildren: RootRouteChildren = {
   InsightsRoute: InsightsRoute,
   ProjectionsRoute: ProjectionsRoute,
   RevenueRoute: RevenueRoute,
+  StaffSchoolRoute: StaffSchoolRoute,
   TrainingRoute: TrainingRoute,
   ValidationRoute: ValidationRoute,
   PerformanceKraRoute: PerformanceKraRoute,

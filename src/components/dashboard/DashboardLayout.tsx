@@ -9,6 +9,7 @@ const nav = [
   { to: "/performance", label: "Corporate Performance" },
   { to: "/revenue", label: "Revenue Analysis" },
   { to: "/training", label: "Training Analysis" },
+  { to: "/staff-school", label: "Staff School" },
   { to: "/projections", label: "Projections" },
   { to: "/analytics", label: "Visual Analytics" },
   { to: "/detailed", label: "Detailed Analysis" },

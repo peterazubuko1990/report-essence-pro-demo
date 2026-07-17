@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
-import { Kpi, EnhancedKpi, Note, Section, DataTable, PctBar, EmptyState } from "@/components/dashboard/widgets";
+import { Kpi, EnhancedKpi, Note, Section, EmptyState } from "@/components/dashboard/widgets";
 import { ChartCard, ChartRenderer } from "@/components/dashboard/ChartKit";
 import { fmtNaira, growth } from "@/data/itf2024";
 import { useYear } from "@/lib/year-context";
@@ -58,6 +58,20 @@ function ExecutiveOverview() {
     enabled: !!prevYear,
     queryFn: async () => {
       const { data } = await supabase.from("kra_rows").select("*").eq("year", prevYear as number);
+      return data ?? [];
+    },
+  });
+
+  const { data: managementAttentionNotes = [] } = useQuery<any[]>({
+    queryKey: ["presenter_notes", "management_attention", year],
+    enabled: year > 0,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("presenter_notes")
+        .select("*")
+        .eq("year", year)
+        .ilike("section", "management_attention")
+        .order("sort_order");
       return data ?? [];
     },
   });
@@ -234,8 +248,14 @@ function ExecutiveOverview() {
             </ul>
           )}
         </Section>
-        <Section kicker="Attention" title="Items Requiring Director Attention">
-          {declines.length === 0 ? (
+        <Section kicker="Attention" title="Items Requiring Management Attention">
+          {managementAttentionNotes.length > 0 ? (
+            <ul className="space-y-2 text-sm">
+              {managementAttentionNotes.map((note: any) => (
+                <li key={note.id}>⚠ {note.title ? <b>{note.title}. </b> : null}{note.body}</li>
+              ))}
+            </ul>
+          ) : declines.length === 0 ? (
             <p className="text-sm text-itf-ink/60">No KRA/KPI records for FY {year}.</p>
           ) : (
             <ul className="space-y-2 text-sm">
@@ -246,40 +266,6 @@ function ExecutiveOverview() {
           )}
         </Section>
       </div>
-
-      {areaRevCurrent.length > 0 && (
-        <Section kicker="Snapshot" title={`Revenue Summary — FY ${year}`}>
-          <DataTable
-            headers={prevYear
-              ? [`Stream`, `${prevYear} Target`, `${prevYear} Actual`, `${prevYear} %`, `${year} Target`, `${year} Actual`, `${year} %`, `YoY Growth`]
-              : [`Stream`, `${year} Target`, `${year} Actual`, `${year} %`]}
-            rows={revenueTotals.map((row) => {
-              const g = growth(row.actual, row.previousActual);
-              if (prevYear) {
-                return [
-                  row.stream,
-                  fmtNaira(row.previousTarget),
-                  fmtNaira(row.previousActual),
-                  <PctBar key={row.stream+"a"} value={row.previousPct} />,
-                  fmtNaira(row.target),
-                  fmtNaira(row.actual),
-                  <PctBar key={row.stream+"b"} value={row.pct} />,
-                  <span key={row.stream+"g"} className={g >= 0 ? "text-itf-green font-semibold" : "text-itf-red font-semibold"}>{g.toFixed(1)}%</span>,
-                ];
-              }
-              return [
-                row.stream,
-                fmtNaira(row.target),
-                fmtNaira(row.actual),
-                <PctBar key={row.stream+"a"} value={row.pct} />,
-              ];
-            })}
-          />
-          <Note>
-            Achievement % is <i>Actual ÷ Target × 100</i>; growth % is <i>(Current − Previous) ÷ Previous × 100</i>. All figures reflect live data from the admin console.
-          </Note>
-        </Section>
-      )}
 
       <div className="text-xs text-itf-ink/60">
         Achievement formula: <code>Actual ÷ Target × 100</code>. Growth formula: <code>(Current − Previous) ÷ Previous × 100</code>.

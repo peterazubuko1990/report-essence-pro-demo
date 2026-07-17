@@ -531,6 +531,9 @@ function TableEditor({ def, year }: { def: TableDef; year: number }) {
         <div>
           <h2 className="font-semibold text-itf-green">{def.label}</h2>
           <p className="text-[11px] text-itf-ink/60">FY {year} · {rows.length} row(s)</p>
+          {def.tableKey === "presenter_notes" && (
+            <p className="mt-1 text-[11px] text-itf-ink/60">Use section key <code className="rounded bg-slate-100 px-1 py-0.5">management_attention</code> to manage the Executive Overview attention items.</p>
+          )}
         </div>
         <div className="flex flex-wrap items-center gap-2">
           {def.tableKey === "kra_rows" && (

@@ -23,11 +23,11 @@ export const ReportHeader = memo(function ReportHeader({ title, subtitle }: { ti
     <div className="relative overflow-hidden rounded-[36px] border border-itf-rule bg-gradient-to-br from-white via-itf-canvas to-white p-6 shadow-[0_20px_60px_-20px_rgba(0,0,0,0.2)] sm:p-8">
       <div className="absolute inset-y-0 right-0 w-40 bg-gradient-to-l from-itf-green/10 to-transparent" />
       <div className="relative space-y-3">
-        <div className="inline-flex items-center rounded-full border border-itf-red/20 bg-itf-red/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.3em] text-itf-red">
+        <div className="inline-flex items-center rounded-full border border-itf-red/20 bg-itf-red/10 px-4 py-1.5 text-sm font-semibold uppercase tracking-[0.3em] text-itf-red">
           KRA Report
         </div>
-        <h2 className="max-w-4xl text-3xl font-bold leading-tight text-itf-ink sm:text-4xl">{title}</h2>
-        {subtitle && <p className="max-w-3xl text-sm leading-relaxed text-itf-ink/75 sm:text-base">{subtitle}</p>}
+        <h2 className="max-w-4xl text-4xl font-bold leading-tight text-itf-ink sm:text-5xl">{title}</h2>
+        {subtitle && <p className="max-w-3xl text-base leading-relaxed text-itf-ink/75 sm:text-lg">{subtitle}</p>}
       </div>
     </div>
   );
@@ -207,8 +207,8 @@ export const SubgroupComparisonSection = memo(function SubgroupComparisonSection
   return (
     <div className="rounded-[36px] border border-itf-rule bg-gradient-to-br from-white via-itf-canvas/60 to-white p-4 shadow-[0_20px_50px_-24px_rgba(0,0,0,0.35)] sm:p-6">
       <div className="mb-5 border-b border-itf-rule/70 pb-4">
-        <div className="text-[10px] uppercase tracking-[0.24em] text-itf-red font-semibold">Subgroup</div>
-        <h3 className="mt-2 text-2xl font-semibold text-itf-ink">{subgroup}</h3>
+        <div className="text-sm uppercase tracking-[0.24em] text-itf-red font-semibold">Subgroup</div>
+        <h3 className="mt-2 text-3xl font-semibold text-itf-ink">{subgroup}</h3>
       </div>
       <div className="grid gap-6 xl:grid-cols-[1.3fr_1fr]">
         <ComparisonTable title={subgroup} currentYear={currentYear} previousYear={previousYear} rows={rows} />
