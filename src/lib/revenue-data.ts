@@ -135,13 +135,54 @@ function buildSectionForCategory(category: string, currentRows: RevenueRowLike[]
 }
 
 function buildTrainingCentreSections(currentRows: RevenueRowLike[], previousRows: RevenueRowLike[]): RevenueSectionSummary[] {
-  return [];
+  const tcCurrentRows = currentRows.filter((r) => isTrainingCentre(r));
+  const tcPreviousRows = previousRows.filter((r) => isTrainingCentre(r));
+
+  const rows = STREAMS.map((stream) => buildStreamSummary(
+    tcCurrentRows.filter((row) => normalizeStream(row.stream) === stream),
+    tcPreviousRows.filter((row) => normalizeStream(row.stream) === stream),
+    stream,
+  )).filter((row) => row.actual > 0 || row.target > 0 || row.previousActual > 0 || row.previousTarget > 0);
+
+  const centres = Array.from(new Map(
+    tcCurrentRows.filter((row) => Boolean(row.office)).map((row) => [String(row.office ?? "").trim(), [] as RevenueRowLike[]]),
+  ).keys());
+
+  const breakdown = centres.map((office) => {
+    const officeCurrentRows = tcCurrentRows.filter((row) => String(row.office ?? "").trim() === office);
+    const officePreviousRows = tcPreviousRows.filter((row) => String(row.office ?? "").trim() === office);
+    const streams = STREAMS.map((stream) => buildStreamSummary(
+      officeCurrentRows.filter((row) => normalizeStream(row.stream) === stream),
+      officePreviousRows.filter((row) => normalizeStream(row.stream) === stream),
+      stream,
+    )).filter((row) => row.actual > 0 || row.target > 0 || row.previousActual > 0 || row.previousTarget > 0);
+
+    return {
+      office,
+      currentActual: streams.reduce((sum, row) => sum + row.actual, 0),
+      currentTarget: streams.reduce((sum, row) => sum + row.target, 0),
+      previousActual: streams.reduce((sum, row) => sum + row.previousActual, 0),
+      previousTarget: streams.reduce((sum, row) => sum + row.previousTarget, 0),
+      streams,
+    };
+  });
+
+  if (rows.length === 0 && breakdown.length === 0) return [];
+
+  return [{
+    id: "training-centres",
+    title: "Training Centres",
+    kind: "training-centre",
+    rows,
+    breakdown,
+  }];
 }
 
 export function buildRevenueAggregation(currentRows: RevenueRowLike[], previousRows: RevenueRowLike[] = []): RevenueAggregation {
   const totals = STREAMS.map((stream) => buildStreamSummary(currentRows, previousRows, stream));
   const sections = [
     ...CATEGORY_ORDER.map((category) => buildSectionForCategory(category, currentRows, previousRows)),
+    ...buildTrainingCentreSections(currentRows, previousRows),
   ];
 
   return { totals, sections };

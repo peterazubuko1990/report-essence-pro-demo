@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
 import { Kpi, Note, Section, DataTable, PctBar, EmptyState } from "@/components/dashboard/widgets";
@@ -20,7 +21,9 @@ export const Route = createFileRoute("/training")({
 });
 
 function Training() {
-  const { year, hasData } = useYear();
+  const { year, hasData, yearsWithData } = useYear();
+  const prevYear = useMemo(() => [...yearsWithData].filter((y) => y < year).pop() ?? null, [year, yearsWithData]);
+
   if (!hasData(year)) {
     return (
       <DashboardLayout title="Training Analysis" subtitle={`FY ${year}`}>
@@ -33,6 +36,80 @@ function Training() {
     queryKey: ["kra_rows_kra6", [2023, 2024]],
     queryFn: async () => (await supabase.from("kra_rows").select("*").eq("kra", "KRA 6").in("year", [2023, 2024]).order("sort_order")).data ?? [],
   });
+
+  const { data: staffRowsCurrent = [] } = useQuery({
+    queryKey: ["staff_school", year],
+    enabled: year > 0,
+    queryFn: async () => {
+      const { data, error } = await supabase.from("staff_school").select("*").eq("year", year).order("exam");
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
+  const { data: staffRowsPrevious = [] } = useQuery({
+    queryKey: ["staff_school", prevYear],
+    enabled: !!prevYear,
+    queryFn: async () => {
+      const { data, error } = await supabase.from("staff_school").select("*").eq("year", prevYear as number).order("exam");
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
+  const staffExamData = useMemo(() => {
+    const exams = new Map<string, {
+      exam: string;
+      studentsPrev: number;
+      passedPrev: number;
+      pctPrev: number;
+      studentsCur: number;
+      passedCur: number;
+      pctCur: number;
+    }>();
+
+    const normalizeExam = (raw: any) => String(raw ?? "").trim();
+
+    for (const row of staffRowsPrevious) {
+      const exam = normalizeExam(row.exam);
+      if (!exam) continue;
+      if (!exams.has(exam)) {
+        exams.set(exam, { exam, studentsPrev: 0, passedPrev: 0, pctPrev: 0, studentsCur: 0, passedCur: 0, pctCur: 0 });
+      }
+      const entry = exams.get(exam)!;
+      entry.studentsPrev = Number(row.students ?? 0);
+      entry.passedPrev = Number(row.passed ?? 0);
+      entry.pctPrev = Number(row.pct ?? (row.students ? (Number(row.passed ?? 0) / Number(row.students ?? 0)) * 100 : 0));
+    }
+
+    for (const row of staffRowsCurrent) {
+      const exam = normalizeExam(row.exam);
+      if (!exam) continue;
+      if (!exams.has(exam)) {
+        exams.set(exam, { exam, studentsPrev: 0, passedPrev: 0, pctPrev: 0, studentsCur: 0, passedCur: 0, pctCur: 0 });
+      }
+      const entry = exams.get(exam)!;
+      entry.studentsCur = Number(row.students ?? 0);
+      entry.passedCur = Number(row.passed ?? 0);
+      entry.pctCur = Number(row.pct ?? (row.students ? (Number(row.passed ?? 0) / Number(row.students ?? 0)) * 100 : 0));
+    }
+
+    if (exams.size > 0) {
+      return Array.from(exams.values()).sort((a, b) => a.exam.localeCompare(b.exam));
+    }
+
+    return staffSchool.map((s) => ({
+      exam: s.exam,
+      studentsPrev: s.students23,
+      passedPrev: s.pass23,
+      pctPrev: s.pct23,
+      studentsCur: s.students24,
+      passedCur: s.pass24,
+      pctCur: s.pct24,
+    }));
+  }, [staffRowsCurrent, staffRowsPrevious]);
+
+  const hasStaffSchoolLiveData = staffRowsCurrent.length > 0 || staffRowsPrevious.length > 0;
 
   const programmeRows = Object.values(
     kra6Rows.reduce<Record<string, { programme: string; sort_order: number; p2023: number | null; p2024: number | null }>>((acc, row: any) => {
@@ -53,7 +130,16 @@ function Training() {
 
   const progChart = programmeRows.map((p) => ({ name: p.programme.replace(/\s*\(.*\)/, "").slice(0,22), "2023": p.p2023 ?? 0, "2024": p.p2024 ?? 0 }));
   const capacity = adminSupport.filter((r) => r.item.startsWith("Capacity Building"));
-  const staffChart = staffSchool.map((s) => ({ exam: s.exam, "2023 %": s.pct23, "2024 %": s.pct24 }));
+  const staffChart = staffExamData.map((s) => ({ exam: s.exam, [`${prevYear ?? "Prev"} %`]: s.pctPrev, [`${year} %`]: s.pctCur }));
+  const staffTableHeaders = [
+    "Exam",
+    `Students ${prevYear ?? "Prev"}`,
+    `Students ${year}`,
+    `Passed ${prevYear ?? "Prev"}`,
+    `Passed ${year}`,
+    `% ${prevYear ?? "Prev"}`,
+    `% ${year}`,
+  ];
 
   return (
     <DashboardLayout title="Training Analysis" subtitle="Programmes, participants and certification outcomes — KRA 3 to KRA 6 plus Staff School.">
@@ -103,17 +189,25 @@ function Training() {
               <YAxis tick={{ fontSize: 12 }} unit="%" domain={[80, 100]} />
               <Tooltip />
               <Legend />
-              <Line type="monotone" dataKey="2023 %" stroke="#7a8a99" strokeWidth={2} />
-              <Line type="monotone" dataKey="2024 %" stroke="#00723F" strokeWidth={3} />
+              <Line type="monotone" dataKey={staffPrevLabel} stroke="#7a8a99" strokeWidth={2} />
+              <Line type="monotone" dataKey={staffCurrentLabel} stroke="#00723F" strokeWidth={3} />
             </LineChart>
           </ResponsiveContainer>
         </div>
         <DataTable
-          headers={["Exam", "Students 2023", "Students 2024", "Passed 2023", "Passed 2024", "% 2023", "% 2024"]}
-          rows={staffSchool.map((s) => [s.exam, s.students23, s.students24, s.pass23, s.pass24, `${s.pct23}%`, <b key={s.exam} className="text-itf-green">{s.pct24}%</b>])}
+          headers={staffTableHeaders}
+          rows={staffExamData.map((s) => [
+            s.exam,
+            s.studentsPrev.toLocaleString(),
+            s.studentsCur.toLocaleString(),
+            s.passedPrev.toLocaleString(),
+            s.passedCur.toLocaleString(),
+            `${s.pctPrev.toFixed(1)}%`,
+            <b key={`${s.exam}-pct`} className="text-itf-green">{`${s.pctCur.toFixed(1)}%`}</b>,
+          ])}
         />
         <Note>
-          Staff School outcomes improved across every exam — WASSCE reached a perfect 100% pass rate (up from 98%), and NECO BECE rose from 89% to 96%. This strengthens the case for the proposed library and ICT lab upgrades.
+          Staff School outcomes improved across every exam — live data is shown when available, otherwise the 2023/2024 sample dataset is displayed. WASSCE reached a perfect 100% pass rate on the sample data.
         </Note>
       </Section>
 

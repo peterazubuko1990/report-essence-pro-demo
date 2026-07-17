@@ -92,6 +92,17 @@ function Revenue() {
   const kpiTone = (pct: number) => pct >= 100 ? "good" : pct >= 70 ? "warn" : "bad";
   const currentPct = currentTargetTotal > 0 ? (currentTotal / currentTargetTotal) * 100 : 0;
 
+  // Build a flat list of area-office rows only for the comparative chart and ranking
+  const officeBreakdown = aggregation.sections
+    .filter((s) => s.kind === "category")
+    .flatMap((s) => s.breakdown);
+  const officeRows = [...officeBreakdown].sort((a, b) => b.currentActual - a.currentActual).map((o) => ({
+    office: o.office,
+    prev: Number(o.previousActual ?? 0) / 1_000_000_000,
+    current: Number(o.currentActual ?? 0) / 1_000_000_000,
+  }));
+  const officeChartHeight = Math.max(340, officeRows.length * 36);
+
   return (
     <DashboardLayout title="Revenue Analysis" subtitle={prevYear ? `Live revenue data for FY ${year} with FY ${prevYear} comparisons.` : `Live revenue data for FY ${year}.`}>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -138,11 +149,29 @@ function Revenue() {
         <NigeriaRevenueMap rows={areaCurrent} />
       </Section>
 
+      <Section kicker="All Offices" title="Area Offices — Revenue Comparison (₦B)">
+        <div>
+          <div style={{ width: "100%", height: officeChartHeight }}>
+            <ResponsiveContainer width="100%" height={officeChartHeight}>
+              <BarChart layout="vertical" data={officeRows} margin={{ top: 12, right: 16, left: 160, bottom: 12 }}>
+                <CartesianGrid stroke="#e5e7eb" vertical={false} />
+                <XAxis type="number" tick={{ fontSize: 12 }} unit="B" />
+                <YAxis dataKey="office" type="category" width={160} tick={{ fontSize: 12 }} />
+                <Tooltip formatter={(v: number) => `₦${v.toFixed(2)}B`} />
+                <Legend />
+                <Bar dataKey="prev" name={`${prevLabel} Actual`} fill="#7a8a99" />
+                <Bar dataKey="current" name={`${currentLabel} Actual`} fill="#00723F" />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      </Section>
+
       <div className="grid md:grid-cols-2 gap-6">
         <Section kicker="Ranking" title={`Top 10 Offices by Revenue — FY ${year} (₦B)`}>
           <div className="h-72">
             <ResponsiveContainer>
-              <BarChart data={[...aggregation.sections.flatMap((section) => section.breakdown)].sort((a, b) => b.currentActual - a.currentActual).slice(0, 10).map((item) => ({ office: item.office, value: item.currentActual / 1_000_000_000 }))} margin={{ top: 8, right: 16, left: 0, bottom: 70 }}>
+              <BarChart data={[...aggregation.sections.filter((section) => section.kind === "category").flatMap((section) => section.breakdown)].sort((a, b) => b.currentActual - a.currentActual).slice(0, 10).map((item) => ({ office: item.office, value: item.currentActual / 1_000_000_000 }))} margin={{ top: 8, right: 16, left: 0, bottom: 70 }}>
                 <CartesianGrid stroke="#e5e7eb" vertical={false} />
                 <XAxis dataKey="office" tick={{ fontSize: 12 }} angle={-18} textAnchor="end" height={70} />
                 <YAxis tick={{ fontSize: 12 }} unit="B" />
@@ -155,7 +184,7 @@ function Revenue() {
         <Section kicker="Ranking" title={`Bottom 10 Offices by Revenue — FY ${year} (₦B)`}>
           <div className="h-72">
             <ResponsiveContainer>
-              <BarChart data={[...aggregation.sections.flatMap((section) => section.breakdown)].sort((a, b) => a.currentActual - b.currentActual).slice(0, 10).map((item) => ({ office: item.office, value: item.currentActual / 1_000_000_000 }))} margin={{ top: 8, right: 16, left: 0, bottom: 70 }}>
+              <BarChart data={[...aggregation.sections.filter((section) => section.kind === "category").flatMap((section) => section.breakdown)].sort((a, b) => a.currentActual - b.currentActual).slice(0, 10).map((item) => ({ office: item.office, value: item.currentActual / 1_000_000_000 }))} margin={{ top: 8, right: 16, left: 0, bottom: 70 }}>
                 <CartesianGrid stroke="#e5e7eb" vertical={false} />
                 <XAxis dataKey="office" tick={{ fontSize: 12 }} angle={-18} textAnchor="end" height={70} />
                 <YAxis tick={{ fontSize: 12 }} unit="B" />
@@ -167,44 +196,9 @@ function Revenue() {
         </Section>
       </div>
 
-      <Section kicker="Performance" title={`Revenue by Stream — ${prevYear ?? "Previous"} vs ${year}`}>
-        <DataTable
-          headers={["Stream", `${prevYear ?? "Prev"} Actual`, `${prevYear ?? "Prev"} %`, `${year} Actual`, `${year} %`, "YoY"]}
-          rows={revenueTotals.map((row) => [
-            row.stream,
-            fmtNaira(row.previousActual),
-            <PctBar key={`${row.stream}-prev`} value={safeAchievement(row.previousActual, row.previousTarget)} />,
-            fmtNaira(row.actual),
-            <PctBar key={`${row.stream}-cur`} value={safeAchievement(row.actual, row.target)} />,
-            <span key={`${row.stream}-growth`} className={safeGrowth(row.actual, row.previousActual) >= 0 ? "text-itf-green font-semibold" : "text-itf-red font-semibold"}>
-              {safeGrowth(row.actual, row.previousActual).toFixed(1)}%
-            </span>,
-          ])}
-        />
-      </Section>
+      {/* Revenue by Stream section removed per request */}
 
-      <div className="grid md:grid-cols-2 gap-6">
-        <Section kicker="Top 5" title="Highest Growth Offices (Training Contribution)">
-          <ol className="text-sm space-y-1">
-            {topGrowth.map((r, i) => (
-              <li key={r.office} className="flex justify-between border-b border-itf-rule py-1">
-                <span><b className="text-itf-green">{i + 1}.</b> {r.office} <span className="text-[10px] uppercase text-itf-ink/60">Cat {r.category}</span></span>
-                <span className="text-itf-green font-semibold">+{r.g.toFixed(1)}%</span>
-              </li>
-            ))}
-          </ol>
-        </Section>
-        <Section kicker="Bottom 5" title="Largest Declines (Training Contribution)">
-          <ol className="text-sm space-y-1">
-            {bottomGrowth.map((r, i) => (
-              <li key={r.office} className="flex justify-between border-b border-itf-rule py-1">
-                <span><b className="text-itf-red">{i + 1}.</b> {r.office} <span className="text-[10px] uppercase text-itf-ink/60">Cat {r.category}</span></span>
-                <span className="text-itf-red font-semibold">{r.g.toFixed(1)}%</span>
-              </li>
-            ))}
-          </ol>
-        </Section>
-      </div>
+      {/* Top 5 / Bottom 5 growth lists removed per request */}
 
       <Section kicker="Category Structure" title={`Revenue by Category — ${year}`}>
         <div className="space-y-3">
@@ -229,20 +223,64 @@ function Revenue() {
                   <AccordionContent className="px-4 pb-4">
                     <div className="overflow-x-auto">
                       <DataTable
-                        headers={["Office", "Stream", `${prevYear ?? "Prev"} Actual`, `${year} Target`, `${year} Actual`, `${year} %`, "YoY"]}
-                        rows={section.breakdown.flatMap((office) => office.streams.map((stream) => [
-                          office.office,
-                          stream.stream,
-                          fmtNaira(stream.previousActual),
-                          fmtNaira(stream.target),
-                          fmtNaira(stream.actual),
-                          <PctBar key={`${section.id}-${office.office}-${stream.stream}`} value={safeAchievement(stream.actual, stream.target)} />,
-                          <span key={`${section.id}-${office.office}-${stream.stream}-growth`} className={safeGrowth(stream.actual, stream.previousActual) >= 0 ? "text-itf-green font-semibold" : "text-itf-red font-semibold"}>
-                            {safeGrowth(stream.actual, stream.previousActual).toFixed(1)}%
-                          </span>,
-                        ]))}
+                        headers={["Office", "Stream", `${prevYear ?? "Prev"} Target`, `${prevYear ?? "Prev"} Actual`, `${prevYear ?? "Prev"} % achieved`, `${year} Target`, `${year} Actual`, `${year} % achieved`, "YoY"]}
+                        rows={section.breakdown.flatMap((office) => office.streams.map((stream) => {
+                          const prevTarget = Number(stream.previousTarget ?? 0);
+                          const prevActual = Number(stream.previousActual ?? 0);
+                          const prevPct = safeAchievement(prevActual, prevTarget);
+                          const curTarget = Number(stream.target ?? 0);
+                          const curActual = Number(stream.actual ?? 0);
+                          const curPct = safeAchievement(curActual, curTarget);
+                          const yoy = safeGrowth(curActual, prevActual);
+                          const absY = Math.min(Math.abs(yoy), 200);
+                          const barPct = (absY / 200) * 100;
+                          const barColor = yoy >= 0 ? "bg-itf-green" : "bg-itf-red";
+
+                          return [
+                            office.office,
+                            stream.stream,
+                            fmtNaira(prevTarget),
+                            fmtNaira(prevActual),
+                            <PctBar key={`${section.id}-${office.office}-${stream.stream}-prevpct`} value={prevPct} />,
+                            fmtNaira(curTarget),
+                            fmtNaira(curActual),
+                            <PctBar key={`${section.id}-${office.office}-${stream.stream}-curpct`} value={curPct} />,
+                            <div key={`${section.id}-${office.office}-${stream.stream}-yoy`} className="flex items-center gap-3">
+                              <div className={`${yoy >= 0 ? "text-itf-green" : "text-itf-red"} font-semibold text-sm`}>{yoy >= 0 ? "▲" : "▼"}{yoy.toFixed(1)}%</div>
+                              <div className="flex-1 min-w-[100px] max-w-[140px] h-2 bg-itf-rule rounded-sm overflow-hidden">
+                                <div className={`${barColor} h-full`} style={{ width: `${barPct}%` }} />
+                              </div>
+                            </div>,
+                          ];
+                        }))}
                       />
                     </div>
+                    {section.kind === "training-centre" ? (
+                      <div className="mt-6">
+                        <div className="text-sm font-semibold text-itf-ink mb-3">Training Centres — Revenue Comparison</div>
+                        <div className="h-[420px]">
+                          <ResponsiveContainer width="100%" height="100%">
+                            <BarChart
+                              layout="vertical"
+                              data={[...section.breakdown].sort((a, b) => b.currentActual - a.currentActual).map((item) => ({
+                                office: item.office,
+                                prev: item.previousActual / 1_000_000_000,
+                                current: item.currentActual / 1_000_000_000,
+                              }))}
+                              margin={{ top: 12, right: 16, left: 160, bottom: 12 }}
+                            >
+                              <CartesianGrid stroke="#e5e7eb" vertical={false} />
+                              <XAxis type="number" tick={{ fontSize: 12 }} unit="B" />
+                              <YAxis dataKey="office" type="category" width={160} tick={{ fontSize: 12 }} />
+                              <Tooltip formatter={(v: number) => `₦${v.toFixed(2)}B`} />
+                              <Legend />
+                              <Bar dataKey="prev" name={`${prevLabel} Actual`} fill="#7a8a99" />
+                              <Bar dataKey="current" name={`${currentLabel} Actual`} fill="#00723F" />
+                            </BarChart>
+                          </ResponsiveContainer>
+                        </div>
+                      </div>
+                    ) : null}
                   </AccordionContent>
                 </AccordionItem>
               );

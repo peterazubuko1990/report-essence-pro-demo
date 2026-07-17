@@ -253,8 +253,8 @@ export function NigeriaRevenueMap({ rows }: { rows: RevenueRow[] }) {
         </div>
 
       <div className="flex flex-wrap items-start gap-4">
-        <div className="overflow-auto rounded-lg border border-itf-rule bg-slate-50 p-3" style={{ minWidth: 860, minHeight: 520 }}>
-          <svg viewBox={NIGERIA_MAP.viewBox} width="860" height="520" className="block" preserveAspectRatio="xMidYMid meet">
+        <div className="overflow-hidden rounded-lg border border-itf-rule bg-slate-50 p-3 flex-1 min-w-0" style={{ minHeight: 520 }}>
+          <svg viewBox={NIGERIA_MAP.viewBox} width="100%" height="100%" className="block" preserveAspectRatio="xMidYMid meet">
             <defs>
               <filter id="text-shadow" x="-50%" y="-50%" width="200%" height="200%">
                 <feDropShadow dx="0" dy="1" stdDeviation="1" floodColor="#000" floodOpacity="0.6" />
@@ -355,7 +355,7 @@ export function NigeriaRevenueMap({ rows }: { rows: RevenueRow[] }) {
           </svg>
         </div>
 
-        <div className="grid min-w-[240px] max-w-[320px] gap-4">
+        <div className="grid min-w-[240px] max-w-[320px] gap-4 flex-none">
           <div className="rounded-lg border border-itf-rule bg-white p-4 shadow-sm">
             <div className="text-xs uppercase tracking-[0.18em] text-itf-ink font-semibold mb-3">Top generator</div>
             {topState.state ? (
