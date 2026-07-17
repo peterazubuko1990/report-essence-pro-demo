@@ -4,8 +4,8 @@ export function Section({ title, children, kicker }: { title: string; children: 
   return (
     <section className="bg-white border border-itf-rule rounded-md shadow-sm">
       <header className="px-6 py-4 border-b border-itf-rule bg-itf-green/[0.04]">
-        {kicker && <div className="text-base tracking-[0.18em] uppercase text-itf-red font-semibold">{kicker}</div>}
-        <h2 className="text-xl sm:text-2xl font-semibold text-itf-green">{title}</h2>
+        {kicker && <div className="text-sm tracking-[0.18em] uppercase text-itf-red font-black">{kicker}</div>}
+        <h2 className="text-2xl sm:text-3xl font-black tracking-tight text-itf-ink">{title}</h2>
       </header>
       <div className="p-6">{children}</div>
     </section>
@@ -21,9 +21,9 @@ export function Kpi({
     tone === "warn" ? "border-l-itf-gold" : "border-l-itf-ink/40";
   return (
     <div className={`bg-white border border-itf-rule border-l-4 ${ring} rounded-md px-5 py-4 shadow-sm`}>
-      <div className="text-base uppercase tracking-[0.16em] text-itf-ink/60 font-semibold">{label}</div>
-      <div className="text-3xl sm:text-4xl font-bold text-itf-ink mt-2 leading-tight">{value}</div>
-      {sub && <div className="text-base text-itf-ink/60 mt-2">{sub}</div>}
+      <div className="text-sm sm:text-base uppercase tracking-[0.16em] text-itf-ink/80 font-black">{label}</div>
+      <div className="text-4xl sm:text-5xl font-black text-itf-ink mt-2 leading-tight">{value}</div>
+      {sub && <div className="text-base font-semibold text-itf-ink/70 mt-2">{sub}</div>}
     </div>
   );
 }
@@ -87,13 +87,13 @@ export function EnhancedKpi({
   return (
     <div className={`bg-white border border-itf-rule border-l-4 ${borderColor} rounded-lg px-6 py-5 shadow-md hover:shadow-lg transition-shadow`}>
       {/* Card Header / Label */}
-      <div className="text-sm uppercase tracking-[0.16em] text-itf-ink/50 font-semibold mb-2">{label}</div>
+      <div className="text-sm uppercase tracking-[0.16em] text-itf-ink/80 font-black mb-2">{label}</div>
       
       {/* Current Year Value - Largest Element */}
-      <div className="text-5xl sm:text-6xl font-bold text-itf-ink leading-none mb-2">{formatValue(currentValue)}</div>
+      <div className="text-6xl sm:text-7xl font-black text-itf-ink leading-none mb-2">{formatValue(currentValue)}</div>
       
       {/* Year Badge */}
-      <div className="text-sm font-medium text-itf-ink/70 mb-5">FY {currentYear}</div>
+      <div className="text-base font-black text-itf-ink/80 mb-5">FY {currentYear}</div>
 
       {hasPreviousData ? (
         <>
@@ -103,27 +103,27 @@ export function EnhancedKpi({
           {/* Comparison Section */}
           <div className="space-y-3">
             {/* Comparison Label */}
-            <div className="text-sm font-semibold text-itf-ink/60 uppercase tracking-wide">
-              {currentYear} vs {previousYear}
+            <div className="text-sm font-black text-itf-ink/80 uppercase tracking-wide">
+              FY {currentYear} vs FY {previousYear}
             </div>
 
             {/* Previous Year Value */}
             <div className="flex items-baseline gap-2">
-              <span className="text-sm font-medium text-itf-ink/60">FY {previousYear}</span>
-              <span className="text-xl font-bold text-itf-ink">{formatValue(previousValue as number)}</span>
+              <span className="text-sm font-black text-itf-ink/70">FY {previousYear}</span>
+              <span className="text-xl font-black text-itf-ink">{formatValue(previousValue as number)}</span>
             </div>
 
             {/* Performance Indicator */}
             <div className={`${perfBgTone} rounded-md px-4 py-3 flex items-center justify-between`}> 
               <div className={`flex items-center gap-3 ${perfTone}`}>
-                <span className="text-xl font-bold">
+                <span className="text-xl font-black">
                   {perfDirection === "up" ? "▲" : perfDirection === "down" ? "▼" : "–"}
                 </span>
-                <span className="text-base font-semibold">
+                <span className="text-base font-black">
                   {diff !== null ? (diff > 0 ? "+" : "") + formatValue(Math.abs(diff)) : "–"}
                 </span>
               </div>
-              <span className={`text-base font-bold ${perfTone}`}>
+              <span className={`text-base font-black ${perfTone}`}>
                 {pctChange !== null ? (pctChange >= 0 ? "+" : "") + pctChange.toFixed(1) + "%" : "–"}
               </span>
             </div>
@@ -136,8 +136,8 @@ export function EnhancedKpi({
       {/* Presenter note / target context */}
       {noteText ? (
         <div className="mt-4 pt-3 border-t border-itf-rule/30">
-          <div className="text-[10px] uppercase tracking-[0.12em] text-itf-gold font-semibold mb-1">Presenter note</div>
-          <div className="text-[11px] leading-relaxed text-itf-ink/70">{noteText}</div>
+          <div className="text-[10px] uppercase tracking-[0.12em] text-itf-gold font-black mb-1">Presenter note</div>
+          <div className="text-[12px] font-semibold leading-relaxed text-itf-ink/80">{noteText}</div>
         </div>
       ) : showTarget && targetValue ? (
         <div className="mt-4 pt-3 border-t border-itf-rule/30 text-[11px] font-medium text-itf-ink/70">

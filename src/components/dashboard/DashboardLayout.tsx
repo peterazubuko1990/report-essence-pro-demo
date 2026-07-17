@@ -87,8 +87,8 @@ export function DashboardLayout({ children, title, subtitle }: { children: React
         </aside>
         <main className="flex-1 min-w-0 w-full">
           <div className="px-4 sm:px-8 py-4 sm:py-6 border-b border-itf-rule bg-white">
-            <h1 className="text-xl sm:text-2xl font-bold text-itf-green">{title}</h1>
-            {subtitle && <p className="text-xs sm:text-sm text-itf-ink/70 mt-1">{subtitle}</p>}
+            <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-itf-ink">{title}</h1>
+            {subtitle && <p className="text-sm sm:text-base font-semibold text-itf-ink/80 mt-1">{subtitle}</p>}
           </div>
           <div className="px-4 sm:px-8 py-4 sm:py-6 space-y-6 overflow-x-hidden">{children}</div>
           <footer className="px-4 sm:px-8 py-6 text-[11px] text-itf-ink/60 border-t border-itf-rule bg-white flex flex-wrap items-center justify-between gap-2">
