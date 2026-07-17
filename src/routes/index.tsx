@@ -142,7 +142,7 @@ function ExecutiveOverview() {
             previousYear={prevYear}
             formatValue={fmtNaira}
             tone={kpiTone(Number(tc.pct ?? 0))}
-            noteText="This stream includes training-centre revenue in the headline total, but those rows are not treated as normal office/state entries in the map or office breakdowns."
+            noteText="This Training Contribution total reflects all area-office entries. Training-centre rows are excluded from map and office breakdown calculations."
           />
         )}
 
