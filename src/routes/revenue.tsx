@@ -255,32 +255,32 @@ function Revenue() {
                         }))}
                       />
                     </div>
-                    {section.kind === "training-centre" ? (
-                      <div className="mt-6">
-                        <div className="text-sm font-semibold text-itf-ink mb-3">Training Centres — Revenue Comparison</div>
-                        <div className="h-[420px]">
-                          <ResponsiveContainer width="100%" height="100%">
-                            <BarChart
-                              layout="vertical"
-                              data={[...section.breakdown].sort((a, b) => b.currentActual - a.currentActual).map((item) => ({
-                                office: item.office,
-                                prev: item.previousActual / 1_000_000_000,
-                                current: item.currentActual / 1_000_000_000,
-                              }))}
-                              margin={{ top: 12, right: 16, left: 160, bottom: 12 }}
-                            >
-                              <CartesianGrid stroke="#e5e7eb" vertical={false} />
-                              <XAxis type="number" tick={{ fontSize: 12 }} unit="B" />
-                              <YAxis dataKey="office" type="category" width={160} tick={{ fontSize: 12 }} />
-                              <Tooltip formatter={(v: number) => `₦${v.toFixed(2)}B`} />
-                              <Legend />
-                              <Bar dataKey="prev" name={`${prevLabel} Actual`} fill="#7a8a99" />
-                              <Bar dataKey="current" name={`${currentLabel} Actual`} fill="#00723F" />
-                            </BarChart>
-                          </ResponsiveContainer>
-                        </div>
+                    <div className="mt-6">
+                      <div className="text-sm font-semibold text-itf-ink mb-3">
+                        {section.kind === "training-centre" ? "Training Centres — Revenue Comparison" : "Office Revenue Comparison"}
                       </div>
-                    ) : null}
+                      <div className="h-[420px]">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <BarChart
+                            layout="vertical"
+                            data={[...section.breakdown].sort((a, b) => b.currentActual - a.currentActual).map((item) => ({
+                              office: item.office,
+                              prev: item.previousActual / 1_000_000_000,
+                              current: item.currentActual / 1_000_000_000,
+                            }))}
+                            margin={{ top: 12, right: 16, left: 160, bottom: 12 }}
+                          >
+                            <CartesianGrid stroke="#e5e7eb" vertical={false} />
+                            <XAxis type="number" tick={{ fontSize: 12 }} unit="B" />
+                            <YAxis dataKey="office" type="category" width={160} tick={{ fontSize: 12 }} />
+                            <Tooltip formatter={(v: number) => `₦${v.toFixed(2)}B`} />
+                            <Legend />
+                            <Bar dataKey="prev" name={`${prevLabel} Actual`} fill="#7a8a99" />
+                            <Bar dataKey="current" name={`${currentLabel} Actual`} fill="#00723F" />
+                          </BarChart>
+                        </ResponsiveContainer>
+                      </div>
+                    </div>
                   </AccordionContent>
                 </AccordionItem>
               );

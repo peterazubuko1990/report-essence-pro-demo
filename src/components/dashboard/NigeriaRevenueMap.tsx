@@ -1,4 +1,4 @@
-import { useMemo, useState, type MouseEvent } from "react";
+import { useMemo, useRef, useState, type MouseEvent as ReactMouseEvent } from "react";
 import { fmtNaira } from "@/data/itf2024";
 import { inferRevenueMode } from "@/lib/revenue-data";
 import { NIGERIA_MAP } from "./nigeria-map-data";
@@ -23,6 +23,7 @@ type StateRevenue = {
 };
 
 type Band = "none" | "low" | "warn" | "good" | "excellent" | "bad" | "caution";
+type HoverInfo = { state: string; x: number; y: number } | null;
 
 const MAP_CANONICAL_STATE: Record<string, string> = {
   "Federal Capital Territory": "FCT",
@@ -37,6 +38,7 @@ const OFFICE_TO_STATE: Record<string, string> = {
   Ikeja: "Lagos",
   Isolo: "Lagos",
   Lekki: "Lagos",
+  Ibadan: "Oyo",
   "V/Island": "Lagos",
   "Ikorodu": "Lagos",
   "Badagry": "Lagos",
@@ -136,6 +138,8 @@ function getLabelPosition(path: string) {
 
 export function NigeriaRevenueMap({ rows }: { rows: RevenueRow[] }) {
   const [hoverState, setHoverState] = useState<string | null>(null);
+  const [hoverInfo, setHoverInfo] = useState<HoverInfo>(null);
+  const mapContainerRef = useRef<HTMLDivElement | null>(null);
 
   const stateData = useMemo(() => {
     const data = new Map<string, StateRevenue>();
@@ -238,8 +242,21 @@ export function NigeriaRevenueMap({ rows }: { rows: RevenueRow[] }) {
 
   const hovered = hoverState ? stateData.get(hoverState) : undefined;
 
-  const handleMouseMove = (state: string) => {
+  const handlePointerMove = (state: string, event: ReactMouseEvent<SVGGElement>) => {
+    if (!mapContainerRef.current) return;
+
+    const rect = mapContainerRef.current.getBoundingClientRect();
     setHoverState(state);
+    setHoverInfo({
+      state,
+      x: event.clientX - rect.left,
+      y: event.clientY - rect.top,
+    });
+  };
+
+  const handlePointerLeave = () => {
+    setHoverState(null);
+    setHoverInfo(null);
   };
 
   return (
@@ -252,7 +269,7 @@ export function NigeriaRevenueMap({ rows }: { rows: RevenueRow[] }) {
           <div className="rounded-lg border border-itf-rule bg-slate-100 px-3 py-2 text-sm text-slate-700">No recorded revenue</div>
         </div>
 
-      <div className="flex flex-wrap items-start gap-4">
+      <div ref={mapContainerRef} className="relative flex flex-wrap items-start gap-4">
         <div className="overflow-hidden rounded-lg border border-itf-rule bg-slate-50 p-3 flex-1 min-w-0" style={{ minHeight: 520 }}>
           <svg viewBox={NIGERIA_MAP.viewBox} width="100%" height="100%" className="block" preserveAspectRatio="xMidYMid meet">
             <defs>
@@ -287,9 +304,9 @@ export function NigeriaRevenueMap({ rows }: { rows: RevenueRow[] }) {
               return (
                 <g
                   key={location.id}
-                  onMouseEnter={() => handleMouseMove(state)}
-                  onMouseMove={() => handleMouseMove(state)}
-                  onMouseLeave={() => setHoverState(null)}
+                  onMouseEnter={(event) => handlePointerMove(state, event)}
+                  onMouseMove={(event) => handlePointerMove(state, event)}
+                  onMouseLeave={handlePointerLeave}
                   className="cursor-pointer"
                 >
                   <path
@@ -355,6 +372,31 @@ export function NigeriaRevenueMap({ rows }: { rows: RevenueRow[] }) {
           </svg>
         </div>
 
+        {hoverInfo && hovered ? (
+          <div
+            className="pointer-events-none absolute z-20 w-56 rounded-xl border border-itf-rule bg-white/95 p-3 shadow-xl backdrop-blur-sm"
+            style={{
+              left: Math.min(Math.max(hoverInfo.x + 18, 18), 320),
+              top: Math.min(Math.max(hoverInfo.y - 12, 18), 480),
+            }}
+          >
+            <div className="text-[11px] uppercase tracking-[0.2em] text-itf-green font-semibold mb-2">State detail</div>
+            <div className="text-base font-semibold text-itf-green">{hovered.state}</div>
+            <div className="mt-2 text-2xl font-bold text-itf-ink">{fmtNaira(hovered.actual)}</div>
+            <div className="text-xs text-itf-ink/60">Target: {fmtNaira(hovered.target)}</div>
+            <div className="mt-2 text-xs text-itf-ink/60">Offices: {hovered.officeCount}</div>
+            <div className="mt-3 rounded-lg border border-itf-rule bg-slate-50 p-2">
+              <div className="text-[10px] uppercase tracking-wider text-slate-500 mb-1">Stream breakdown</div>
+              {STREAMS.map((stream) => (
+                <div key={stream} className="flex items-center justify-between text-xs mb-1 last:mb-0">
+                  <span>{stream}</span>
+                  <span className="font-semibold">{fmtNaira(hovered.streams[stream])}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : null}
+
         <div className="grid min-w-[240px] max-w-[320px] gap-4 flex-none">
           <div className="rounded-lg border border-itf-rule bg-white p-4 shadow-sm">
             <div className="text-xs uppercase tracking-[0.18em] text-itf-ink font-semibold mb-3">Top generator</div>
@@ -375,30 +417,6 @@ export function NigeriaRevenueMap({ rows }: { rows: RevenueRow[] }) {
               <div className="text-sm text-slate-500">No revenue data</div>
             )}
           </div>
-          <div className="rounded-lg border border-itf-rule bg-white p-4 shadow-sm">
-            <div className="text-xs uppercase tracking-[0.18em] text-itf-red font-semibold mb-3">State detail</div>
-            {hovered ? (
-              <div className="space-y-3 text-sm">
-                <div className="text-base font-semibold text-itf-green">{hovered.state}</div>
-                <div className="text-sm text-itf-ink/70">Total revenue</div>
-                <div className="text-2xl font-bold text-itf-ink">{fmtNaira(hovered.actual)}</div>
-                <div className="text-xs text-itf-ink/60">Target: {fmtNaira(hovered.target)}</div>
-                <div className="text-xs text-itf-ink/60">Offices: {hovered.officeCount}</div>
-                <div className="rounded-lg border border-itf-rule bg-slate-50 p-3">
-                  <div className="text-[11px] uppercase tracking-wider text-slate-500 mb-2">Stream breakdown</div>
-                  {STREAMS.map((stream) => (
-                    <div key={stream} className="flex items-center justify-between text-sm mb-1 last:mb-0">
-                      <span>{stream}</span>
-                      <span className="font-semibold">{fmtNaira(hovered.streams[stream])}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ) : (
-              <div className="text-sm text-slate-600">Hover over any state to inspect its revenue performance, office count and stream breakdown.</div>
-            )}
-          </div>
-
           <div className="rounded-lg border border-itf-rule bg-white p-4 shadow-sm">
             <div className="text-xs uppercase tracking-[0.18em] text-itf-green font-semibold mb-3">Map legend</div>
               <div className="space-y-3 text-sm">
