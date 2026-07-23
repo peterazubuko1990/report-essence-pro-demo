@@ -26,7 +26,7 @@ function Training() {
 
   if (!hasData(year)) {
     return (
-      <DashboardLayout title="Training Analysis" subtitle={`FY ${year}`}>
+      <DashboardLayout title="Training Analysis" subtitle={`TY ${year}`}>
         <EmptyState year={year} hint="No training data for this year. Add training programmes and staff-school results via the admin panel." />
       </DashboardLayout>
     );
@@ -76,7 +76,7 @@ function Training() {
               <YAxis tick={{ fontSize: 11 }} />
               <Tooltip />
               <Legend />
-              <Bar dataKey="2023" fill="#7a8a99" />
+              <Bar dataKey="2023" fill="#C8102E" />
               <Bar dataKey="2024" fill="#00723F" />
             </BarChart>
           </ResponsiveContainer>

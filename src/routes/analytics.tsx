@@ -91,21 +91,21 @@ function AnalyticsPage() {
   });
 
   return (
-    <DashboardLayout title="Visual Analytics" subtitle={`Extended charts for FY ${year} — comparisons, rankings, distributions and trends. Switch chart type on each card.`}>
+    <DashboardLayout title="Visual Analytics" subtitle={`Extended charts for TY ${year} — comparisons, rankings, distributions and trends. Switch chart type on each card.`}>
       <div className="grid lg:grid-cols-2 gap-6">
-        <ChartCard title={`Top 10 Offices by Revenue — FY ${year} (₦B)`} kicker="Ranking" defaultKind="bar" allowKinds={["bar", "line", "area", "radar"]}>
+        <ChartCard title={`Top 10 Offices by Revenue — TY ${year} (₦B)`} kicker="Ranking" defaultKind="bar" allowKinds={["bar", "line", "area", "radar"]}>
           {(k) => <ChartRenderer data={topOffices} xKey="office" series={["actualB"]} kind={k} unit="B" seriesColors={[GREEN]} />}
         </ChartCard>
 
-        <ChartCard title={`Lowest 10 Offices — FY ${year} (₦M)`} kicker="Ranking" defaultKind="bar" allowKinds={["bar", "line", "area", "radar"]}>
+        <ChartCard title={`Lowest 10 Offices — TY ${year} (₦M)`} kicker="Ranking" defaultKind="bar" allowKinds={["bar", "line", "area", "radar"]}>
           {(k) => <ChartRenderer data={bottomOffices} xKey="office" series={["actualM"]} kind={k} unit="M" seriesColors={[RED]} />}
         </ChartCard>
 
-        <ChartCard title={`Revenue Share by Office Category — FY ${year}`} kicker="Distribution" defaultKind="donut" allowKinds={["donut", "pie", "bar", "radar"]}>
+        <ChartCard title={`Revenue Share by Office Category — TY ${year}`} kicker="Distribution" defaultKind="donut" allowKinds={["donut", "pie", "bar", "radar"]}>
           {(k) => <ChartRenderer data={catDonut} xKey="category" series={["total"]} kind={k} unit="B" />}
         </ChartCard>
 
-        <ChartCard title={`Revenue Mix by Category — FY ${year} (₦B)`} kicker="Stacked" defaultKind="bar" allowKinds={["bar", "line", "area", "radar"]}>
+        <ChartCard title={`Revenue Mix by Category — TY ${year} (₦B)`} kicker="Stacked" defaultKind="bar" allowKinds={["bar", "line", "area", "radar"]}>
           {(k) => <ChartRenderer data={byCategory} xKey="category" series={["Training Contribution", "Course Fee", "Other Income"]} kind={k} unit="B" />}
         </ChartCard>
 
@@ -118,12 +118,12 @@ function AnalyticsPage() {
         </ChartCard>
 
         {programmeDist.length > 0 && (
-          <ChartCard title={`Programme Participation Share — FY ${year}`} kicker="Programmes" defaultKind="donut" allowKinds={["donut", "pie", "bar", "radar"]}>
+          <ChartCard title={`Programme Participation Share — TY ${year}`} kicker="Programmes" defaultKind="donut" allowKinds={["donut", "pie", "bar", "radar"]}>
             {(k) => <ChartRenderer data={programmeDist} xKey="programme" series={["participants"]} kind={k} />}
           </ChartCard>
         )}
 
-        <Section kicker="Health" title={`FY ${year} Revenue Achievement vs Target`}>
+        <Section kicker="Health" title={`TY ${year} Revenue Achievement vs Target`}>
           <div className="space-y-3 py-3">
             {buildRevenueAggregation(areaRev, []).totals.map((row) => {
               const pct = row.target > 0 ? (row.actual / row.target) * 100 : 0;

@@ -21,7 +21,7 @@ function Detailed() {
   const { year, hasData } = useYear();
   if (!hasData(year)) {
     return (
-      <DashboardLayout title="Detailed Analysis" subtitle={`FY ${year}`}>
+      <DashboardLayout title="Detailed Analysis" subtitle={`TY ${year}`}>
         <EmptyState year={year} hint="No area-office or training-centre data recorded for this year." />
       </DashboardLayout>
     );

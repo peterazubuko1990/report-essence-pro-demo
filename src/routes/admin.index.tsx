@@ -354,13 +354,13 @@ function AdminHome() {
   const addYear = async () => {
     const y = parseInt(newYear, 10);
     if (!y) return toast.error("Enter a valid year");
-    const { error } = await supabase.from("years").insert({ year: y, label: `FY ${y}` });
+    const { error } = await supabase.from("years").insert({ year: y, label: `TY ${y}` });
     if (error) return toast.error(error.message);
     setNewYear("");
     qc.invalidateQueries({ queryKey: ["years"] });
     qc.invalidateQueries({ queryKey: ["years_with_data"] });
     setYear(y);
-    toast.success(`FY ${y} created`);
+    toast.success(`TY ${y} created`);
   };
 
   const cloneFromPrevious = async () => {
@@ -378,7 +378,7 @@ function AdminHome() {
         await sb.from(t.key).insert(rows);
       }
       qc.invalidateQueries();
-      toast.success(`Cloned data from FY ${prev} to FY ${year}`);
+      toast.success(`Cloned data from TY ${prev} to TY ${year}`);
     } catch (e: any) {
       toast.error(`Clone failed: ${e.message}`);
     }
@@ -386,16 +386,16 @@ function AdminHome() {
 
   const loadPptxSample = async () => {
     if (year !== 2023 && year !== 2024) {
-      return toast.error("Sample data only available for FY 2023 and FY 2024. Switch year first.");
+      return toast.error("Sample data only available for TY 2023 and TY 2024. Switch year first.");
     }
-    if (!confirm(`Load the full PowerPoint KRA/KPI dataset into FY ${year}?\n\nThis REPLACES existing kra_rows for FY ${year} only.`)) return;
+    if (!confirm(`Load the full PowerPoint KRA/KPI dataset into TY ${year}?\n\nThis REPLACES existing kra_rows for TY ${year} only.`)) return;
     try {
       await sb.from("kra_rows").delete().eq("year", year);
       const rows = pptxRowsForYear(year as 2023 | 2024);
       const { error } = await sb.from("kra_rows").insert(rows);
       if (error) throw error;
       qc.invalidateQueries();
-      toast.success(`Loaded ${rows.length} KPI rows from PowerPoint for FY ${year}`);
+      toast.success(`Loaded ${rows.length} KPI rows from PowerPoint for TY ${year}`);
     } catch (e: any) {
       toast.error(`Seed failed: ${e.message}`);
     }
@@ -410,7 +410,7 @@ function AdminHome() {
           {years.map((y) => (
             <button key={y} onClick={() => setYear(y)}
               className={`px-3 py-1.5 rounded text-xs font-semibold ${y === year ? "bg-itf-green text-white" : "bg-itf-canvas text-itf-ink hover:bg-itf-green/10"}`}>
-              FY {y}
+              TY {y}
             </button>
           ))}
         </div>
@@ -419,7 +419,7 @@ function AdminHome() {
             className="rounded border border-itf-rule px-3 py-1.5 text-sm w-40" />
           <button onClick={addYear} className="rounded bg-itf-gold px-3 py-1.5 text-xs font-semibold">+ Add Year</button>
           <button onClick={cloneFromPrevious} className="rounded bg-itf-green text-white px-3 py-1.5 text-xs font-semibold">Clone from Previous</button>
-          <button onClick={loadPptxSample} className="rounded bg-itf-red text-white px-3 py-1.5 text-xs font-semibold" title="Load full PowerPoint KRA dataset into current FY (2023/2024 only)">
+          <button onClick={loadPptxSample} className="rounded bg-itf-red text-white px-3 py-1.5 text-xs font-semibold" title="Load full PowerPoint KRA dataset into current TY (2023/2024 only)">
             ⤓ Load PPT KRA Data
           </button>
         </div>
@@ -565,7 +565,7 @@ function TableEditor({ def, year }: { def: TableDef; year: number }) {
       <div className="flex items-center justify-between p-4 border-b border-itf-rule">
         <div>
           <h2 className="font-semibold text-itf-green">{def.label}</h2>
-          <p className="text-[11px] text-itf-ink/60">FY {year} · {rows.length} row(s)</p>
+          <p className="text-[11px] text-itf-ink/60">TY {year} · {rows.length} row(s)</p>
           {def.tableKey === "presenter_notes" && (
             <p className="mt-1 text-[11px] text-itf-ink/60">Use section key <code className="rounded bg-slate-100 px-1 py-0.5">management_attention</code> to manage the Executive Overview attention items.</p>
           )}
@@ -630,7 +630,7 @@ function TableEditor({ def, year }: { def: TableDef; year: number }) {
             ))}
             {rows.length === 0 && (
               <tr><td colSpan={visibleFields.length + (def.tableKey === "kra_rows" ? 2 : 1)} className="px-3 py-8 text-center text-sm text-itf-ink/50">
-                No data for FY {year}. Add rows or clone from a previous year.
+                No data for TY {year}. Add rows or clone from a previous year.
               </td></tr>
             )}
           </tbody>
@@ -908,7 +908,7 @@ function CsvImport({ def, year, mode, onClose, onDone }: { def: TableDef; year: 
     <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
       <div className="bg-white rounded-lg shadow-lg w-full max-w-2xl">
         <div className="p-4 border-b border-itf-rule flex justify-between items-center">
-          <h3 className="font-semibold text-itf-green">Import CSV — {def.label} (FY {year})</h3>
+          <h3 className="font-semibold text-itf-green">Import CSV — {def.label} (TY {year})</h3>
           <button onClick={onClose} className="text-itf-ink/50 hover:text-itf-ink">✕</button>
         </div>
         <div className="p-4 space-y-3">

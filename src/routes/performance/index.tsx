@@ -218,7 +218,7 @@ function Performance() {
   return (
     <DashboardLayout
       title="Corporate Performance"
-      subtitle={`Choose a parent KRA report for FY ${year}`}
+      subtitle={`Choose a parent KRA report for TY ${year}`}
     >
       {overviewQuery.isLoading ? (
         <div className="text-sm text-itf-ink/60 p-8 text-center">Loading KRA report cards…</div>
@@ -247,8 +247,8 @@ function Performance() {
 
                 <div className="mt-5 rounded-3xl border border-itf-rule bg-itf-canvas/70 p-4 text-sm text-itf-ink/80">
                   <div className="mb-2 flex items-center justify-between text-[11px] font-semibold uppercase tracking-[0.22em] text-itf-ink/60">
-                    <span>Previous FY</span>
-                    <span>Current FY</span>
+                    <span>Previous TY</span>
+                    <span>Current TY</span>
                   </div>
                   <div className="relative h-2.5 overflow-hidden rounded-full bg-white/80">
                     <div className="absolute inset-y-0 left-0 rounded-full bg-itf-gold/80" style={{ width: `${item.preview?.previousPercent ?? 0}%` }} />

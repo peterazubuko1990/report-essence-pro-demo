@@ -321,7 +321,7 @@ function KRAReport() {
 
   if (!year || !hasData(year)) {
     return (
-      <DashboardLayout title={dashboardTitle} subtitle={year ? `FY ${year}` : "Loading…"}>
+      <DashboardLayout title={dashboardTitle} subtitle={year ? `TY ${year}` : "Loading…"}>
         <EmptyState year={year} hint={isKra1 ? "No KRA 1 data exists for this year. Use the admin panel to add or clone KRA rows for this year." : isKra5 ? "No KRA 5 data exists for this year. Use the admin panel to add or clone KRA rows for this year." : "No KRA data exists for this year. Use the admin panel to add or clone KRA rows for this year."} />
       </DashboardLayout>
     );
@@ -329,7 +329,7 @@ function KRAReport() {
 
   if (loading) {
     return (
-      <DashboardLayout title={dashboardTitle} subtitle={`FY ${year} vs ${prevYear ?? year}`}>
+      <DashboardLayout title={dashboardTitle} subtitle={`TY ${year} vs ${prevYear ?? year}`}>
         <div className="text-sm text-itf-ink/60 p-8 text-center">{isKra1 ? "Loading KRA 1 report…" : isKra5 ? "Loading KRA 5 report…" : "Loading KRA report…"}</div>
       </DashboardLayout>
     );
@@ -345,7 +345,7 @@ function KRAReport() {
             ? "KRA 6 — Standards, Accreditation & Apprenticeship Activities"
             : "KRA 7 — Administrative & HR Support"
         }
-        subtitle={prevYear ? `FY ${year} vs FY ${prevYear}` : `FY ${year}`}
+        subtitle={prevYear ? `TY ${year} vs TY ${prevYear}` : `TY ${year}`}
       >
         <div className="space-y-8 max-w-6xl mx-auto">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -392,7 +392,7 @@ function KRAReport() {
             ? "KRA 7 — Administrative & HR Support"
             : "KRA 8 — Revenue, Financial & Audit Support Services"
         }
-        subtitle={prevYear ? `FY ${year} vs FY ${prevYear}` : `FY ${year}`}
+        subtitle={prevYear ? `TY ${year} vs TY ${prevYear}` : `TY ${year}`}
       >
         <div className="space-y-8 max-w-6xl mx-auto">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -443,7 +443,7 @@ function KRAReport() {
   return (
     <DashboardLayout
       title="KRA 1 — Promoting Training Consciousness"
-      subtitle={prevYear ? `FY ${year} vs FY ${prevYear}` : `FY ${year}`}
+      subtitle={prevYear ? `TY ${year} vs TY ${prevYear}` : `TY ${year}`}
     >
       <div className="space-y-8 max-w-6xl mx-auto">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">

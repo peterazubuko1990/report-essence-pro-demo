@@ -93,7 +93,7 @@ export function EnhancedKpi({
       <div className="text-6xl sm:text-7xl font-black text-itf-ink leading-none mb-2">{formatValue(currentValue)}</div>
       
       {/* Year Badge */}
-      <div className="text-base font-black text-itf-ink/80 mb-5">FY {currentYear}</div>
+      <div className="text-base font-black text-itf-ink/80 mb-5">TY {currentYear}</div>
 
       {hasPreviousData ? (
         <>
@@ -104,12 +104,12 @@ export function EnhancedKpi({
           <div className="space-y-3">
             {/* Comparison Label */}
             <div className="text-sm font-black text-itf-ink/80 uppercase tracking-wide">
-              FY {currentYear} vs FY {previousYear}
+              TY {currentYear} vs TY {previousYear}
             </div>
 
             {/* Previous Year Value */}
             <div className="flex items-baseline gap-2">
-              <span className="text-sm font-black text-itf-ink/70">FY {previousYear}</span>
+              <span className="text-sm font-black text-itf-ink/70">TY {previousYear}</span>
               <span className="text-xl font-black text-itf-ink">{formatValue(previousValue as number)}</span>
             </div>
 
@@ -207,7 +207,7 @@ export function EmptyState({ year, hint }: { year: number; hint?: string }) {
   return (
     <div className="bg-white border border-dashed border-itf-rule rounded-md p-12 text-center">
       <div className="text-6xl mb-4">📊</div>
-      <div className="text-3xl font-bold text-itf-green">No data yet for FY {year}</div>
+      <div className="text-3xl font-bold text-itf-green">No data yet for TY {year}</div>
       <p className="text-lg text-itf-ink/70 mt-4 max-w-2xl mx-auto leading-relaxed">
         {hint ?? "This year has no records yet. Sign in to the admin panel to add KRA/KPI, revenue, training and other performance data, or clone from a previous year."}
       </p>
@@ -228,7 +228,7 @@ export function CompareYearPicker({
         className="border border-itf-rule rounded px-3 py-2 bg-white text-base"
       >
         <option value="">— none —</option>
-        {options.map((y) => <option key={y} value={y}>FY {y}</option>)}
+        {options.map((y) => <option key={y} value={y}>TY {y}</option>)}
       </select>
     </div>
   );

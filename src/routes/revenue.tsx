@@ -46,7 +46,7 @@ function Revenue() {
 
   if (!year || !hasData(year)) {
     return (
-      <DashboardLayout title="Revenue Analysis" subtitle={`FY ${year}`}>
+      <DashboardLayout title="Revenue Analysis" subtitle={`TY ${year}`}>
         <EmptyState year={year} hint="No revenue records for this year. Add revenue rows / area-office data via the admin panel." />
       </DashboardLayout>
     );
@@ -104,11 +104,11 @@ function Revenue() {
   const officeChartHeight = Math.max(340, officeRows.length * 36);
 
   return (
-    <DashboardLayout title="Revenue Analysis" subtitle={prevYear ? `Live revenue data for FY ${year} with FY ${prevYear} comparisons.` : `Live revenue data for FY ${year}.`}>
+    <DashboardLayout title="Revenue Analysis" subtitle={prevYear ? `Live revenue data for TY ${year} with TY ${prevYear} comparisons.` : `Live revenue data for TY ${year}.`}>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Kpi label={`Training Contribution ${year}`} value={fmtNaira(Number(tc?.actual ?? 0))} sub={prevYear ? `${safeGrowth(Number(tc?.actual ?? 0), Number(tc?.previousActual ?? 0)).toFixed(1)}% vs FY ${prevYear}` : "Live from database"} tone={kpiTone(Number(tc?.pct ?? 0))} />
-        <Kpi label={`Course Fee ${year}`} value={fmtNaira(Number(cf?.actual ?? 0))} sub={prevYear ? `${safeGrowth(Number(cf?.actual ?? 0), Number(cf?.previousActual ?? 0)).toFixed(1)}% vs FY ${prevYear}` : "Live from database"} tone={kpiTone(Number(cf?.pct ?? 0))} />
-        <Kpi label={`Other Income ${year}`} value={fmtNaira(Number(oi?.actual ?? 0))} sub={prevYear ? `${safeGrowth(Number(oi?.actual ?? 0), Number(oi?.previousActual ?? 0)).toFixed(1)}% vs FY ${prevYear}` : "Live from database"} tone={kpiTone(Number(oi?.pct ?? 0))} />
+        <Kpi label={`Training Contribution ${year}`} value={fmtNaira(Number(tc?.actual ?? 0))} sub={prevYear ? `${safeGrowth(Number(tc?.actual ?? 0), Number(tc?.previousActual ?? 0)).toFixed(1)}% vs TY ${prevYear}` : "Live from database"} tone={kpiTone(Number(tc?.pct ?? 0))} />
+        <Kpi label={`Course Fee ${year}`} value={fmtNaira(Number(cf?.actual ?? 0))} sub={prevYear ? `${safeGrowth(Number(cf?.actual ?? 0), Number(cf?.previousActual ?? 0)).toFixed(1)}% vs TY ${prevYear}` : "Live from database"} tone={kpiTone(Number(cf?.pct ?? 0))} />
+        <Kpi label={`Other Income ${year}`} value={fmtNaira(Number(oi?.actual ?? 0))} sub={prevYear ? `${safeGrowth(Number(oi?.actual ?? 0), Number(oi?.previousActual ?? 0)).toFixed(1)}% vs TY ${prevYear}` : "Live from database"} tone={kpiTone(Number(oi?.pct ?? 0))} />
         <Kpi label={`Total Generated ${year}`} value={fmtNaira(currentTotal)} sub="Sum of live revenue streams" tone={currentPct >= 100 ? "good" : currentPct >= 70 ? "warn" : "bad"} />
       </div>
 
@@ -136,7 +136,7 @@ function Revenue() {
                 <YAxis tick={{ fontSize: 12 }} unit="B" />
                 <Tooltip formatter={(v: number) => `₦${v.toFixed(2)}B`} />
                 <Legend />
-                <Bar dataKey={prevLabel} fill="#7a8a99" />
+                <Bar dataKey={prevLabel} fill="#C8102E" />
                 <Bar dataKey={currentLabel} fill="#00723F" />
               </BarChart>
             </ResponsiveContainer>
@@ -159,7 +159,7 @@ function Revenue() {
                 <YAxis dataKey="office" type="category" width={160} tick={{ fontSize: 12 }} />
                 <Tooltip formatter={(v: number) => `₦${v.toFixed(2)}B`} />
                 <Legend />
-                <Bar dataKey="prev" name={`${prevLabel} Actual`} fill="#7a8a99" />
+                <Bar dataKey="prev" name={`${prevLabel} Actual`} fill="#C8102E" />
                 <Bar dataKey="current" name={`${currentLabel} Actual`} fill="#00723F" />
               </BarChart>
             </ResponsiveContainer>
@@ -168,7 +168,7 @@ function Revenue() {
       </Section>
 
       <div className="grid md:grid-cols-2 gap-6">
-        <Section kicker="Ranking" title={`Top 10 Offices by Revenue — FY ${year} (₦B)`}>
+        <Section kicker="Ranking" title={`Top 10 Offices by Revenue — TY ${year} (₦B)`}>
           <div className="h-72">
             <ResponsiveContainer>
               <BarChart data={[...aggregation.sections.filter((section) => section.kind === "category").flatMap((section) => section.breakdown)].sort((a, b) => b.currentActual - a.currentActual).slice(0, 10).map((item) => ({ office: item.office, value: item.currentActual / 1_000_000_000 }))} margin={{ top: 8, right: 16, left: 0, bottom: 70 }}>
@@ -181,7 +181,7 @@ function Revenue() {
             </ResponsiveContainer>
           </div>
         </Section>
-        <Section kicker="Ranking" title={`Bottom 10 Offices by Revenue — FY ${year} (₦B)`}>
+        <Section kicker="Ranking" title={`Bottom 10 Offices by Revenue — TY ${year} (₦B)`}>
           <div className="h-72">
             <ResponsiveContainer>
               <BarChart data={[...aggregation.sections.filter((section) => section.kind === "category").flatMap((section) => section.breakdown)].sort((a, b) => a.currentActual - b.currentActual).slice(0, 10).map((item) => ({ office: item.office, value: item.currentActual / 1_000_000_000 }))} margin={{ top: 8, right: 16, left: 0, bottom: 70 }}>
@@ -275,7 +275,7 @@ function Revenue() {
                             <YAxis dataKey="office" type="category" width={160} tick={{ fontSize: 12 }} />
                             <Tooltip formatter={(v: number) => `₦${v.toFixed(2)}B`} />
                             <Legend />
-                            <Bar dataKey="prev" name={`${prevLabel} Actual`} fill="#7a8a99" />
+                            <Bar dataKey="prev" name={`${prevLabel} Actual`} fill="#C8102E" />
                             <Bar dataKey="current" name={`${currentLabel} Actual`} fill="#00723F" />
                           </BarChart>
                         </ResponsiveContainer>

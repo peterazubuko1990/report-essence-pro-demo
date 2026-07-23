@@ -119,13 +119,13 @@ function StaffSchool() {
         <Kpi
           label={`Total Students ${year}`}
           value={totalStudentsCur.toLocaleString()}
-          sub={prevYear ? `vs ${totalStudentsPrev.toLocaleString()} in FY ${prevYear}` : "Live student headcount"}
+          sub={prevYear ? `vs ${totalStudentsPrev.toLocaleString()} in TY ${prevYear}` : "Live student headcount"}
           tone="good"
         />
         <Kpi
           label={`Total Passed ${year}`}
           value={totalPassedCur.toLocaleString()}
-          sub={prevYear ? `vs ${totalPassedPrev.toLocaleString()} in FY ${prevYear}` : "Live pass totals"}
+          sub={prevYear ? `vs ${totalPassedPrev.toLocaleString()} in TY ${prevYear}` : "Live pass totals"}
           tone="good"
         />
         <Kpi
@@ -151,7 +151,7 @@ function StaffSchool() {
               <YAxis tick={{ fontSize: 11 }} unit="%" />
               <Tooltip />
               <Legend />
-              <Bar dataKey={staffPrevLabel} fill="#7a8a99" />
+              <Bar dataKey={staffPrevLabel} fill="#C8102E" />
               <Bar dataKey={staffCurrentLabel} fill="#00723F" />
             </BarChart>
           </ResponsiveContainer>

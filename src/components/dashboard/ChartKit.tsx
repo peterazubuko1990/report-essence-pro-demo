@@ -19,6 +19,8 @@ const KINDS: { k: ChartKind; label: string; Icon: any }[] = [
 ];
 
 const COLORS = ["#00723F", "#C8102E", "#E6B422", "#1F6FB2", "#7a8a99", "#6d4c41", "#4b5563"];
+const PREV_COLOR = "#C8102E"; // previous year (red)
+const CURRENT_COLOR = "#00723F"; // current year (green)
 
 function TooltipContent({ active, payload, label, unit }: { active?: boolean; payload?: Array<any>; label?: string | number; unit?: string }) {
   if (!active || !payload?.length) return null;
@@ -105,7 +107,10 @@ export function ChartRenderer({
   unit?: string;
   seriesColors?: string[];
 }) {
-  const colors = seriesColors ?? COLORS;
+  const defaultColors = seriesColors ?? COLORS;
+  const colors = (!seriesColors && series.length >= 2)
+    ? [PREV_COLOR, CURRENT_COLOR, ...defaultColors.filter((c) => c !== PREV_COLOR && c !== CURRENT_COLOR)]
+    : defaultColors;
   const primary = series[0];
 
   const pieData = data.map((d) => ({ name: String(d[xKey]), value: Number(d[primary] ?? 0) }));

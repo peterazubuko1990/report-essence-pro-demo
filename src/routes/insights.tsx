@@ -36,14 +36,14 @@ function Insights() {
 
   if (!hasData(year) && !anyData) {
     return (
-      <DashboardLayout title="Management Insights" subtitle={`FY ${year}`}>
+      <DashboardLayout title="Management Insights" subtitle={`TY ${year}`}>
         <EmptyState year={year} hint="No insights, wins, challenges or recommendations exist for this year yet." />
       </DashboardLayout>
     );
   }
 
   return (
-    <DashboardLayout title="Management Insights" subtitle={`Findings, wins and recommendations for FY ${year}.`}>
+    <DashboardLayout title="Management Insights" subtitle={`Findings, wins and recommendations for TY ${year}.`}>
       {(wins.data?.length ?? 0) > 0 && (
         <Section kicker="Wins" title="Achievements & Highlights">
           <ul className="space-y-3">

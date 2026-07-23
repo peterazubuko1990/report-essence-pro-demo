@@ -78,7 +78,7 @@ function ExecutiveOverview() {
 
   if (!year || !hasData(year)) {
     return (
-      <DashboardLayout title="Executive Overview" subtitle={year ? `FY ${year}` : "Loading…"}>
+      <DashboardLayout title="Executive Overview" subtitle={year ? `TY ${year}` : "Loading…"}>
         <EmptyState year={year} hint="No operational data recorded for this year. Use the admin panel to add KRA, revenue and training records, or clone from a previous year." />
       </DashboardLayout>
     );
@@ -116,8 +116,8 @@ function ExecutiveOverview() {
 
   return (
     <DashboardLayout
-      title={`Executive Overview — FY ${year}`}
-      subtitle={prevYear ? `One-page snapshot for FY ${year} with FY ${prevYear} comparisons.` : `One-page snapshot for FY ${year}.`}
+      title={`Executive Overview — TY ${year}`}
+      subtitle={prevYear ? `One-page snapshot for TY ${year} with TY ${prevYear} comparisons.` : `One-page snapshot for TY ${year}.`}
     >
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {/* Total Revenue */}
@@ -239,7 +239,7 @@ function ExecutiveOverview() {
       <div className="grid md:grid-cols-2 gap-6">
         <Section kicker="Wins" title="Top Performing KPIs">
           {wins.length === 0 ? (
-            <p className="text-sm text-itf-ink/60">No KRA/KPI records for FY {year}.</p>
+            <p className="text-sm text-itf-ink/60">No KRA/KPI records for TY {year}.</p>
           ) : (
             <ul className="space-y-2 text-sm">
               {wins.map((k, i) => (
@@ -256,7 +256,7 @@ function ExecutiveOverview() {
               ))}
             </ul>
           ) : declines.length === 0 ? (
-            <p className="text-sm text-itf-ink/60">No KRA/KPI records for FY {year}.</p>
+            <p className="text-sm text-itf-ink/60">No KRA/KPI records for TY {year}.</p>
           ) : (
             <ul className="space-y-2 text-sm">
               {declines.map((k, i) => (

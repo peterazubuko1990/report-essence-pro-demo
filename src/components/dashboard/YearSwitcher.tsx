@@ -12,7 +12,7 @@ export function YearSwitcher() {
             y === year ? "bg-itf-red text-white" : "text-white/80 hover:bg-white/10"
           }`}
         >
-          FY {y}
+          TY {y}
         </button>
       ))}
     </div>
