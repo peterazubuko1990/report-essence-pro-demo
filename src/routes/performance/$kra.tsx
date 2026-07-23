@@ -426,19 +426,10 @@ function KRAReport() {
                   <h3 className="mt-3 text-2xl font-semibold text-itf-ink">{bigHeading}</h3>
                   <h4 className="mt-4 text-xl font-semibold text-itf-ink">{dataHeading}</h4>
                           <div className="mt-8 space-y-6">
-                    {isKra8 ? (
-                      <>
-                        <ComparisonTable title={`${dataHeading} — Core Performance`} currentYear={year} previousYear={prevYear} rows={rows} />
-                        <PercentageChart title={`${formatChartTitle(subgroup)} — Overall Achievement`} currentYear={year} previousYear={prevYear} rows={rows} />
-                        <ComparisonTable title={`${dataHeading} — Annual Target / Actual / Achievement`} currentYear={year} previousYear={prevYear} rows={rows} targetLabel="Annual Target" actualLabel="Actual" pctLabel="% Achieved" />
-                        <PercentageChart title={`${formatChartTitle(subgroup)} — Annual Achievement`} currentYear={year} previousYear={prevYear} rows={rows} />
-                      </>
-                    ) : (
-                      <>
-                        <ComparisonTable title={dataHeading} currentYear={year} previousYear={prevYear} rows={rows} />
-                        <PercentageChart title={formatChartTitle(subgroup)} currentYear={year} previousYear={prevYear} rows={rows} />
-                      </>
-                    )}
+                    <>
+                      <ComparisonTable title={`${dataHeading} — Core Performance`} currentYear={year} previousYear={prevYear} rows={rows} />
+                      <PercentageChart title={`${formatChartTitle(subgroup)} — Overall Achievement`} currentYear={year} previousYear={prevYear} rows={rows} />
+                    </>
                   </div>
                 </div>,
               ];

@@ -11,7 +11,7 @@ export const Route = createFileRoute("/admin/")({
 });
 
 type TableKey = "kra_rows" | "revenue_rows" | "area_revenue" | "training_programmes" | "staff_school" | "hr_metrics" | "challenges" | "way_forward" | "wins" | "presenter_notes";
-type KRAImportMode = "comparison" | "metric";
+type KRAImportMode = "comparison" | "metric" | "kra8";
 type RevenueUploadMode = "area-office" | "training-centre";
 type ViewKey = TableKey | "area-office-revenue" | "training-centre-revenue";
 const sb = supabase as any;
@@ -190,6 +190,26 @@ function getKraFormFields(def: TableDef, mode?: KRAImportMode): FieldDef[] {
   ];
 }
 
+function getKraTemplateFields(mode?: KRAImportMode): FieldDef[] {
+  if (mode === "metric") {
+    return [
+      { name: "kra", label: "KRA", type: "text", required: true },
+      { name: "subgroup", label: "Subgroup", type: "text", nullable: true },
+      { name: "kpi", label: "KPI", type: "text", required: true },
+      { name: "actual", label: "Value", type: "number", nullable: true },
+      { name: "sort_order", label: "Sort", type: "number" },
+    ];
+  }
+  return [
+    { name: "kra", label: "KRA", type: "text", required: true },
+    { name: "subgroup", label: "Subgroup", type: "text", nullable: true },
+    { name: "kpi", label: "KPI", type: "text", required: true },
+    { name: "target", label: "Target", type: "number", required: true },
+    { name: "actual", label: "Actual", type: "number", required: true },
+    { name: "sort_order", label: "Sort", type: "number" },
+  ];
+}
+
 function getFormFields(def: TableDef, mode?: KRAImportMode): FieldDef[] {
   if (def.tableKey === "kra_rows") return getKraFormFields(def, mode);
   return def.fields;
@@ -281,6 +301,7 @@ function isKraRowInScope(kra: string | null | undefined, mode?: KRAImportMode) {
   const match = String(kra).match(/KRA\s*(\d+)/i);
   const number = match ? Number(match[1]) : null;
   if (mode === "metric") return number !== null && number >= 5 && number <= 7;
+  if (mode === "kra8") return number === 8;
   return number !== null && number >= 1 && number <= 4;
 }
 
@@ -478,13 +499,25 @@ function TableEditor({ def, year }: { def: TableDef; year: number }) {
 
   const downloadTemplate = async () => {
     if (def.tableKey === "kra_rows") {
-      const fields = getKraFormFields(def, kraImportMode);
+      const fields = getKraTemplateFields(kraImportMode);
       const header = fields.map((f) => f.name).join(",");
 
       let templateRows: Array<Record<string, unknown>> = [];
       try {
-        const result = await fetchLatestKraRowsForMode(kraImportMode);
-        templateRows = result.rows;
+        if (kraImportMode === "kra8") {
+          // Explicit KRA 8 Revenue Generation Activities KPIs template
+          templateRows = [
+            { kra: "KRA 8", subgroup: "Revenue Generation Activities", kpi: "Employers' Registered to Date", sort_order: 10 },
+            { kra: "KRA 8", subgroup: "Revenue Generation Activities", kpi: "Number of Employers Contributing", sort_order: 20 },
+            { kra: "KRA 8", subgroup: "Revenue Generation Activities", kpi: "Number of Employers Defaulting", sort_order: 30 },
+            { kra: "KRA 8", subgroup: "Revenue Generation Activities", kpi: "Number of Employers Accounts Verified", sort_order: 40 },
+            { kra: "KRA 8", subgroup: "Revenue Generation Activities", kpi: "Discovery of New Companies", sort_order: 50 },
+            { kra: "KRA 8", subgroup: "Revenue Generation Activities", kpi: "Number of New Companies Registered", sort_order: 60 },
+          ];
+        } else {
+          const result = await fetchLatestKraRowsForMode(kraImportMode);
+          templateRows = result.rows;
+        }
       } catch (error: any) {
         console.error("Failed to fetch previous KRA rows for template", error);
         templateRows = [];
@@ -496,6 +529,8 @@ function TableEditor({ def, year }: { def: TableDef; year: number }) {
           if (f.name === "kra") return escapeCsv(row.kra);
           if (f.name === "subgroup") return escapeCsv(row.subgroup);
           if (f.name === "kpi") return escapeCsv(row.kpi);
+          if (f.name === "target") return "";
+          if (f.name === "actual") return "";
           if (f.name === "sort_order") return escapeCsv(row.sort_order);
           return "";
         });
@@ -507,7 +542,7 @@ function TableEditor({ def, year }: { def: TableDef; year: number }) {
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
-      link.download = kraImportMode === "metric" ? "kra-5-7-template.csv" : "kra-1-4-template.csv";
+      link.download = kraImportMode === "metric" ? "kra-5-7-template.csv" : kraImportMode === "kra8" ? "kra-8-template.csv" : "kra-1-4-template.csv";
       link.click();
       URL.revokeObjectURL(url);
       return;
@@ -543,6 +578,9 @@ function TableEditor({ def, year }: { def: TableDef; year: number }) {
               </button>
               <button onClick={() => setKraImportMode("metric")} className={`rounded px-2 py-1 text-[11px] font-semibold ${kraImportMode === "metric" ? "bg-itf-green text-white" : "text-itf-ink/70"}`}>
                 KRA 5–7 metric
+              </button>
+              <button onClick={() => setKraImportMode("kra8")} className={`rounded px-2 py-1 text-[11px] font-semibold ${kraImportMode === "kra8" ? "bg-itf-green text-white" : "text-itf-ink/70"}`}>
+                KRA 8
               </button>
             </div>
           )}
@@ -826,8 +864,36 @@ function CsvImport({ def, year, mode, onClose, onDone }: { def: TableDef; year: 
         }
         rows.push(obj);
       });
-      const { error } = await sb.from(def.tableKey).insert(rows);
-      if (error) throw error;
+      // Prevent duplicate KRA rows when importing: update existing rows (match year/kra/kpi), insert new ones.
+      if (def.tableKey === "kra_rows") {
+        const kraValues = Array.from(new Set(rows.map((r: any) => r.kra)));
+        const { data: existing = [], error: fetchErr } = await sb.from("kra_rows").select("kra,kpi,id").eq("year", year).in("kra", kraValues);
+        if (fetchErr) throw fetchErr;
+        const existingMap = new Map<string, any>();
+        (existing as any[]).forEach((e: any) => existingMap.set(`${e.kra}||${e.kpi}`, e));
+
+        const toInsert: any[] = [];
+        const toUpdate: any[] = [];
+        for (const r of rows) {
+          const key = `${r.kra}||${r.kpi}`;
+          if (existingMap.has(key)) toUpdate.push(r);
+          else toInsert.push(r);
+        }
+
+        // Run updates sequentially to avoid conflicts
+        for (const u of toUpdate) {
+          const { error: updErr } = await sb.from("kra_rows").update(u).match({ year: u.year, kra: u.kra, kpi: u.kpi });
+          if (updErr) throw updErr;
+        }
+
+        if (toInsert.length) {
+          const { error: insErr } = await sb.from("kra_rows").insert(toInsert);
+          if (insErr) throw insErr;
+        }
+      } else {
+        const { error } = await sb.from(def.tableKey).insert(rows);
+        if (error) throw error;
+      }
       toast.success(`Imported ${rows.length} row(s)`);
       onDone();
     } catch (e: any) {
@@ -852,6 +918,16 @@ function CsvImport({ def, year, mode, onClose, onDone }: { def: TableDef; year: 
             {def.tableKey === "kra_rows" && mode === "metric" && (
               <div className="mt-2 rounded border border-itf-rule/70 bg-itf-canvas/60 p-2 text-[11px] text-itf-ink/70">
                 Use this mode for KRA 5–7 metric uploads. Enter the value for the selected year and the report will compare it automatically with the previous year.
+              </div>
+            )}
+            {def.tableKey === "kra_rows" && mode === "kra8" && (
+              <div className="mt-2 rounded border border-itf-rule/70 bg-itf-canvas/60 p-2 text-[11px] text-itf-ink/70">
+                Use this mode for KRA 8 uploads. It uses a plain KRA-row structure with KRA, subgroup, KPI, target, actual and sort order only. No revenue stream fields are used. The template lists the Revenue Generation Activities KPIs — please fill only the Target and Actual columns.
+              </div>
+            )}
+            {def.tableKey === "kra_rows" && mode === "kra8" && (
+              <div className="mt-2 rounded border border-itf-rule/70 bg-itf-canvas/60 p-2 text-[11px] text-itf-ink/70">
+                Use this mode for KRA 8 uploads. It uses a plain KRA-row structure with KRA, subgroup, KPI, target, actual and sort order only. No revenue stream fields are used.
               </div>
             )}
             {def.tableKey === "area_revenue" && def.mode === "training-centre" && (
