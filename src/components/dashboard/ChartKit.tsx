@@ -28,7 +28,11 @@ function TooltipContent({ active, payload, label, unit }: { active?: boolean; pa
   const formatValue = (value: unknown) => {
     const num = Number(value ?? 0);
     if (!Number.isFinite(num)) return "—";
-    const precision = unit === "%" ? 1 : 0;
+    if (unit === "%") {
+      return `${num.toFixed(1)}%`;
+    }
+    const absValue = Math.abs(num);
+    const precision = absValue < 1 ? 2 : absValue < 10 ? 1 : 0;
     return `${num.toFixed(precision)}${unit ?? ""}`;
   };
 

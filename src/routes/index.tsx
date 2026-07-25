@@ -106,6 +106,12 @@ function ExecutiveOverview() {
     [`${year}`]: row.actual / 1_000_000_000,
   }));
 
+  const smallStreamChart = [cf, oi].filter(Boolean).map((row) => ({
+    name: row.stream,
+    [`${prevYear ?? "Prev"}`]: row.previousActual / 1_000_000_000,
+    [`${year}`]: row.actual / 1_000_000_000,
+  }));
+
   const kpiTone = (pct: number) => pct >= 100 ? "good" : pct >= 70 ? "warn" : "bad";
   const totalPct = revenueTotals.reduce((sum, row) => sum + row.target, 0) > 0 ? (totalRevCur / revenueTotals.reduce((sum, row) => sum + row.target, 0)) * 100 : 0;
 
@@ -226,14 +232,33 @@ function ExecutiveOverview() {
       </div>
 
       {revChart.length > 0 && (
-        <ChartCard
-          title={prevYear ? `${prevYear} vs ${year} — Revenue Streams (₦B)` : `${year} — Revenue Streams (₦B)`}
-          kicker="Revenue"
-          defaultKind="bar"
-          allowKinds={["bar", "line", "area", "radar"]}
-        >
-          {(k) => <ChartRenderer data={revChart} xKey="name" series={prevYear ? [String(prevYear), String(year)] : [String(year)]} kind={k} unit="B" />}
-        </ChartCard>
+        <div className="grid gap-6 lg:grid-cols-2">
+          <ChartCard
+            title={prevYear ? `${prevYear} vs ${year} — Revenue Streams (₦B)` : `${year} — Revenue Streams (₦B)`}
+            kicker="Revenue"
+            defaultKind="bar"
+            allowKinds={["bar", "line", "area", "radar"]}
+          >
+            {(k) => <ChartRenderer data={revChart} xKey="name" series={prevYear ? [String(prevYear), String(year)] : [String(year)]} kind={k} unit="B" />}
+          </ChartCard>
+
+          {smallStreamChart.length > 0 && (
+            <ChartCard
+              title={`Focused Revenue Comparison — smaller streams`}
+              kicker="Detail"
+              defaultKind="bar"
+              allowKinds={["bar", "line", "area", "radar"]}
+            >
+              {(k) => <ChartRenderer data={smallStreamChart} xKey="name" series={prevYear ? [String(prevYear), String(year)] : [String(year)]} kind={k} unit="B" />}
+            </ChartCard>
+          )}
+        </div>
+      )}
+      {smallStreamChart.length > 0 && (
+        <div className="mt-4 rounded border border-itf-rule bg-white/80 px-4 py-3 text-sm text-itf-ink/70">
+          <p><strong>Note:</strong> The right-hand chart magnifies the smaller revenue streams so that Course Fee and Other Income are visible alongside Training Contribution.</p>
+          <p className="mt-1">Training Contribution is much larger, so the overall chart uses a full-scale view. The focused chart shows the smaller streams in their own comparison.</p>
+        </div>
       )}
 
       <div className="grid md:grid-cols-2 gap-6">
