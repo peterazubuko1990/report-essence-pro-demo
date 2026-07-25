@@ -19,20 +19,26 @@ const formatPercent = (value: number | null | undefined) =>
   value === undefined || value === null ? "—" : `${value.toFixed(2)}%`;
 
 const renderPctWithTrend = (previousPct: number | null | undefined, currentPct: number | null | undefined) => {
+  if (currentPct === undefined || currentPct === null) {
+    return <span className="text-sm font-semibold text-itf-ink/60">—</span>;
+  }
+
   const formattedCurrent = formatPercent(currentPct);
-  if (previousPct === undefined || previousPct === null || currentPct === undefined || currentPct === null) {
-    return formattedCurrent;
+
+  if (previousPct === undefined || previousPct === null) {
+    return <span className="text-sm font-semibold text-itf-ink/70">{formattedCurrent}</span>;
   }
 
   const change = currentPct - previousPct;
   const tone = change > 0 ? "text-itf-green" : change < 0 ? "text-itf-red" : "text-itf-ink/70";
-  const arrow = change > 0 ? "▲" : change < 0 ? "▼" : "–";
-  const sign = change > 0 ? "+" : change < 0 ? "" : "";
+  const arrow = change > 0 ? "▲" : change < 0 ? "▼" : "•";
 
   return (
     <div className="inline-flex items-center gap-2">
-      <span>{formattedCurrent}</span>
-      <span className={`text-sm font-semibold ${tone}`}>{arrow}{sign}{Math.abs(change).toFixed(1)}%</span>
+      <span className="text-sm font-semibold text-itf-ink/70">{formattedCurrent}</span>
+      <span className={`text-sm font-semibold ${tone}`} aria-label="trend indicator">
+        {arrow}
+      </span>
     </div>
   );
 };
