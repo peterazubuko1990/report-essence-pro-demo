@@ -347,7 +347,7 @@ function KRAReport() {
         }
         subtitle={prevYear ? `TY ${year} vs TY ${prevYear}` : `TY ${year}`}
       >
-        <div className="space-y-8 max-w-6xl mx-auto">
+        <div className="space-y-8 w-full">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <Link
               to="/performance"
@@ -394,7 +394,7 @@ function KRAReport() {
         }
         subtitle={prevYear ? `TY ${year} vs TY ${prevYear}` : `TY ${year}`}
       >
-        <div className="space-y-8 max-w-6xl mx-auto">
+        <div className="space-y-8 w-full">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <Link
               to="/performance"
@@ -445,7 +445,7 @@ function KRAReport() {
       title="KRA 1 — Promoting Training Consciousness"
       subtitle={prevYear ? `TY ${year} vs TY ${prevYear}` : `TY ${year}`}
     >
-      <div className="space-y-8 max-w-6xl mx-auto">
+      <div className="space-y-8 w-full">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <Link
             to="/performance"

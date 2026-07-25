@@ -18,6 +18,25 @@ const formatNumber = (value: number | null | undefined) =>
 const formatPercent = (value: number | null | undefined) =>
   value === undefined || value === null ? "—" : `${value.toFixed(2)}%`;
 
+const renderPctWithTrend = (previousPct: number | null | undefined, currentPct: number | null | undefined) => {
+  const formattedCurrent = formatPercent(currentPct);
+  if (previousPct === undefined || previousPct === null || currentPct === undefined || currentPct === null) {
+    return formattedCurrent;
+  }
+
+  const change = currentPct - previousPct;
+  const tone = change > 0 ? "text-itf-green" : change < 0 ? "text-itf-red" : "text-itf-ink/70";
+  const arrow = change > 0 ? "▲" : change < 0 ? "▼" : "–";
+  const sign = change > 0 ? "+" : change < 0 ? "" : "";
+
+  return (
+    <div className="inline-flex items-center gap-2">
+      <span>{formattedCurrent}</span>
+      <span className={`text-sm font-semibold ${tone}`}>{arrow}{sign}{Math.abs(change).toFixed(1)}%</span>
+    </div>
+  );
+};
+
 export const ReportHeader = memo(function ReportHeader({ title, subtitle }: { title: string; subtitle?: string }) {
   return (
     <div className="relative overflow-hidden rounded-[36px] border border-itf-rule bg-gradient-to-br from-white via-itf-canvas to-white p-6 shadow-[0_20px_60px_-20px_rgba(0,0,0,0.2)] sm:p-8">
@@ -79,7 +98,7 @@ export const ComparisonTable = memo(function ComparisonTable({
               formatPercent(row.previousPct),
               formatNumber(row.currentTarget),
               formatNumber(row.currentActual),
-              formatPercent(row.currentPct),
+              renderPctWithTrend(row.previousPct, row.currentPct),
             ]
           : [
               index + 1,
