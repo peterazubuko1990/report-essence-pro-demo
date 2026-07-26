@@ -123,7 +123,7 @@ function StaffSchool() {
           tone="good"
         />
         <Kpi
-          label={`Total Passed ${year}`}
+          label={`Number passed with 5 credits and above including English and Maths ${year}`}
           value={totalPassedCur.toLocaleString()}
           sub={prevYear ? `vs ${totalPassedPrev.toLocaleString()} in TY ${prevYear}` : "Live pass totals"}
           tone="good"
@@ -143,21 +143,8 @@ function StaffSchool() {
       </div>
 
       <Section kicker="Exam Performance" title="Certificate Exam Pass Rates by Exam">
-        <div className="h-72">
-          <ResponsiveContainer>
-            <BarChart data={staffChart} margin={{ top: 16, right: 16, left: 0, bottom: 20 }}>
-              <CartesianGrid stroke="#e5e7eb" vertical={false} />
-              <XAxis dataKey="exam" tick={{ fontSize: 11 }} angle={-25} textAnchor="end" interval={0} />
-              <YAxis tick={{ fontSize: 11 }} unit="%" />
-              <Tooltip />
-              <Legend />
-              <Bar dataKey={staffPrevLabel} fill="#C8102E" />
-              <Bar dataKey={staffCurrentLabel} fill="#00723F" />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
         <DataTable
-          headers={["Exam", `Students ${prevYear ?? "Prev"}`, `Students ${year}`, `Passed ${prevYear ?? "Prev"}`, `Passed ${year}`, `% ${prevYear ?? "Prev"}`, `% ${year}`]}
+          headers={["Exam", `Students ${prevYear ?? "Prev"}`, `Students ${year}`, `Number passed with 5 credits and above including English and Maths ${prevYear ?? "Prev"}`, `Number passed with 5 credits and above including English and Maths ${year}`, `% ${prevYear ?? "Prev"}`, `% ${year}`]}
           rows={staffExamData.map((row) => [
             row.exam,
             row.studentsPrev.toLocaleString(),
@@ -173,6 +160,21 @@ function StaffSchool() {
             ? "Live Staff School exam rows are displayed from the admin panel. Update the Staff School Results table in Admin to refresh this page."
             : "No live staff school rows were found for the selected year. This page is showing the sample 2023/2024 dataset until live data is entered in Admin."}
         </Note>
+      </Section>
+      <Section kicker="Exam Performance" title="Exam Performance Chart">
+        <div className="h-72">
+          <ResponsiveContainer>
+            <BarChart data={staffChart} margin={{ top: 16, right: 16, left: 0, bottom: 20 }}>
+              <CartesianGrid stroke="#e5e7eb" vertical={false} />
+              <XAxis dataKey="exam" tick={{ fontSize: 11 }} angle={-25} textAnchor="end" interval={0} />
+              <YAxis tick={{ fontSize: 11 }} unit="%" />
+              <Tooltip />
+              <Legend />
+              <Bar dataKey={staffPrevLabel} fill="#C8102E" />
+              <Bar dataKey={staffCurrentLabel} fill="#00723F" />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
       </Section>
     </DashboardLayout>
   );

@@ -151,6 +151,20 @@ function formatTrendValue(value: number | null) {
   return new Intl.NumberFormat("en-US", { maximumFractionDigits: 0 }).format(value);
 }
 
+function renderChainBar(percent: number) {
+  const activeCount = Math.min(10, Math.max(0, Math.round((percent / 100) * 10)));
+  return (
+    <div className="grid grid-cols-10 gap-1">
+      {Array.from({ length: 10 }, (_, index) => (
+        <div
+          key={index}
+          className={`h-3 rounded-md ${index < activeCount ? "bg-itf-green" : "bg-itf-ink/10"}`}
+        />
+      ))}
+    </div>
+  );
+}
+
 function useKraOverview(selectedYear: number, previousYear: number | null) {
   return useQuery<KraCard[]>({
     queryKey: ["performance.kra_overview", selectedYear, previousYear],
@@ -245,20 +259,26 @@ function Performance() {
                   <p className="mt-3 text-sm leading-relaxed text-itf-ink/70">Executive summary of KRA performance and progress.</p>
                 )}
 
-                <div className="mt-5 rounded-3xl border border-itf-rule bg-itf-canvas/70 p-4 text-sm text-itf-ink/80">
-                  <div className="mb-2 flex items-center justify-between text-[11px] font-semibold uppercase tracking-[0.22em] text-itf-ink/60">
-                    <span>Previous TY</span>
-                    <span>Current TY</span>
+                <div className="mt-5 space-y-4 rounded-3xl border border-itf-rule bg-itf-canvas/70 p-4 text-sm text-itf-ink/80">
+                  <div className="grid gap-3">
+                    <div className="text-[11px] font-semibold uppercase tracking-[0.22em] text-itf-ink/60">Current TY</div>
+                    {renderChainBar(item.preview?.currentPercent ?? 0)}
+                    <div className="flex items-center justify-between text-[11px] text-itf-ink/60">
+                      <span>TY {year}</span>
+                      <span>{formatTrendValue(item.preview?.currentValue ?? null)}</span>
+                    </div>
                   </div>
-                  <div className="relative h-2.5 overflow-hidden rounded-full bg-white/80">
-                    <div className="absolute inset-y-0 left-0 rounded-full bg-itf-gold/80" style={{ width: `${item.preview?.previousPercent ?? 0}%` }} />
-                    <div className={`absolute inset-y-0 left-0 rounded-full ${item.preview?.barColor ?? "bg-itf-rule"}`} style={{ width: `${Math.max(6, item.preview?.currentPercent ?? 0)}%` }} />
+
+                  <div className="grid gap-3">
+                    <div className="text-[11px] font-semibold uppercase tracking-[0.22em] text-itf-ink/60">Previous TY</div>
+                    {renderChainBar(item.preview?.previousPercent ?? 0)}
+                    <div className="flex items-center justify-between text-[11px] text-itf-ink/60">
+                      <span>{previousYear ? `TY ${previousYear}` : "Previous Year"}</span>
+                      <span>{formatTrendValue(item.preview?.previousValue ?? null)}</span>
+                    </div>
                   </div>
-                  <div className="mt-2 flex items-center justify-between text-[11px] text-itf-ink/60">
-                    <span>{formatTrendValue(item.preview?.previousValue ?? null)}</span>
-                    <span>{formatTrendValue(item.preview?.currentValue ?? null)}</span>
-                  </div>
-                  <div className="mt-2 flex items-center justify-between text-[11px] text-itf-ink/60">
+
+                  <div className="flex items-center justify-between text-[11px] text-itf-ink/60">
                     <span>{item.previewLabel}</span>
                     <span className={item.preview?.trendTone ?? "text-itf-ink/60"}>{item.preview?.trendLabel ?? "No data"}</span>
                   </div>
