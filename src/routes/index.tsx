@@ -116,9 +116,48 @@ function ExecutiveOverview() {
   const totalPct = revenueTotals.reduce((sum, row) => sum + row.target, 0) > 0 ? (totalRevCur / revenueTotals.reduce((sum, row) => sum + row.target, 0)) * 100 : 0;
 
   // top KRA wins & declines
-  const kraWithPct = kraRows.map((k: any) => ({ ...k, pct: Number(k.target) > 0 ? (Number(k.actual) / Number(k.target)) * 100 : 0 }));
-  const wins = [...kraWithPct].sort((a, b) => b.pct - a.pct).slice(0, 5);
-  const declines = [...kraWithPct].sort((a, b) => a.pct - b.pct).slice(0, 5);
+  const lowerIsBetterKpis = new Set(["Termination/Dismissal"]);
+  const kraPrevByKey = Object.fromEntries(
+    kraPrev.map((k: any) => [`${k.kra}||${k.kpi}`, k])
+  );
+  const kraWithYoY = kraRows.map((k: any) => {
+    const prev = kraPrevByKey[`${k.kra}||${k.kpi}`];
+    const prevActual = Number(prev?.actual ?? 0);
+    const actual = Number(k.actual ?? 0);
+    const rawPct = prevActual === 0 ? 0 : growth(actual, prevActual);
+    const delta = actual - prevActual;
+    const isLowerBetter = lowerIsBetterKpis.has(k.kpi);
+    const improvement = isLowerBetter ? prevActual - actual : delta;
+    return { ...k, pct: rawPct, delta, improvement, prevActual, isLowerBetter };
+  });
+
+  const describeYoY = (k: any) => {
+    const current = Number(k.actual ?? 0);
+    const previous = Number(k.prevActual ?? 0);
+    if (!prevYear || previous === 0) {
+      return current === 0
+        ? `There is no prior-year benchmark available for TY ${prevYear ?? year - 1}, so this KPI cannot be compared year-over-year.`
+        : `TY ${year} actual is ${current.toLocaleString()}, but there is no comparable TY ${prevYear ?? year - 1} value for a year-over-year assessment.`;
+    }
+    const absPct = Math.abs(k.pct).toFixed(1);
+    const absDelta = Math.abs(k.delta).toLocaleString();
+    if (k.isLowerBetter) {
+      if (k.delta < 0) {
+        return `This KPI improved by ${absPct}% and decreased by ${absDelta} participants, from ${previous.toLocaleString()} in TY ${prevYear} to ${current.toLocaleString()} in TY ${year}. Lower is better for this measure.`;
+      }
+      if (k.delta > 0) {
+        return `This KPI worsened by ${absPct}% and increased by ${absDelta} participants, from ${previous.toLocaleString()} in TY ${prevYear} to ${current.toLocaleString()} in TY ${year}. Lower is better for this measure.`;
+      }
+      return `This KPI is unchanged year-over-year at ${current.toLocaleString()}. Lower is better for this measure.`;
+    }
+    if (k.delta >= 0) {
+      return `This KPI improved by ${absPct}% and grew by ${absDelta}, from ${previous.toLocaleString()} in TY ${prevYear} to ${current.toLocaleString()} in TY ${year}.`;
+    }
+    return `This KPI declined by ${absPct}% and decreased by ${absDelta}, from ${previous.toLocaleString()} in TY ${prevYear} to ${current.toLocaleString()} in TY ${year}.`;
+  };
+
+  const wins = prevYear ? [...kraWithYoY].sort((a, b) => b.improvement - a.improvement).slice(0, 5) : [];
+  const declines = prevYear ? [...kraWithYoY].sort((a, b) => a.improvement - b.improvement).slice(0, 5) : [];
 
   return (
     <DashboardLayout
@@ -263,17 +302,21 @@ function ExecutiveOverview() {
 
       <div className="grid md:grid-cols-2 gap-6">
         <Section kicker="Wins" title="Top Performing KPIs">
+          <p className="text-sm text-itf-ink/70">These items are the strongest year-over-year performers, so they are useful talking points when presenting progress against the prior year.</p>
           {wins.length === 0 ? (
             <p className="text-sm text-itf-ink/60">No KRA/KPI records for TY {year}.</p>
           ) : (
             <ul className="space-y-2 text-sm">
               {wins.map((k, i) => (
-                <li key={i}>✅ <b>{k.kpi}</b> — {k.pct.toFixed(1)}% of target ({Number(k.actual).toLocaleString()} vs {Number(k.target).toLocaleString()})</li>
+                <li key={i}>
+                  ✅ <b>{k.kpi}</b> — {describeYoY(k)}
+                </li>
               ))}
             </ul>
           )}
         </Section>
         <Section kicker="Attention" title="Items Requiring Management Attention">
+          <p className="text-sm text-itf-ink/70">These KPIs are weaker compared to the prior year and are worth calling out as areas that need corrective focus during the presentation.</p>
           {managementAttentionNotes.length > 0 ? (
             <ul className="space-y-2 text-sm">
               {managementAttentionNotes.map((note: any) => (
@@ -285,7 +328,9 @@ function ExecutiveOverview() {
           ) : (
             <ul className="space-y-2 text-sm">
               {declines.map((k, i) => (
-                <li key={i}>⚠ <b>{k.kpi}</b> — {k.pct.toFixed(1)}% of target ({Number(k.actual).toLocaleString()} vs {Number(k.target).toLocaleString()})</li>
+                <li key={i}>
+                  ⚠ <b>{k.kpi}</b> — {describeYoY(k)}
+                </li>
               ))}
             </ul>
           )}
