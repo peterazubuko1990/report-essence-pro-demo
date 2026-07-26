@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
 import { Note, Section, EmptyState } from "@/components/dashboard/widgets";
@@ -86,6 +86,20 @@ function Insights() {
           </div>
         </Section>
       )}
+
+      <Section kicker="Projection" title="Projected Performance Module">
+        <div className="text-sm text-itf-ink/80 leading-relaxed space-y-3">
+          <p>
+            The projection module forecasts future KPI and revenue performance using historical trends. It is the final planning tool and should be reviewed after Management Insights.
+          </p>
+          <Link
+            to="/projections"
+            className="inline-flex items-center rounded-full bg-itf-green px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-itf-green/90"
+          >
+            Go to Projections
+          </Link>
+        </div>
+      </Section>
     </DashboardLayout>
   );
 }

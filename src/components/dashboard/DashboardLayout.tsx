@@ -10,6 +10,7 @@ const nav = [
   { to: "/revenue", label: "Revenue Analysis" },
   { to: "/staff-school", label: "Staff School" },
   { to: "/insights", label: "Management Insights" },
+  { to: "/projections", label: "Projections" },
 ];
 
 

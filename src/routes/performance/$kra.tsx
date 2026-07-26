@@ -107,6 +107,26 @@ function formatChartTitle(subgroup: string) {
   return `${formatDataSlideHeading(subgroup)} — % Achieved`;
 }
 
+function getKraNameByNumber(num: number) {
+  return num === 1
+    ? "Promoting Training Consciousness"
+    : num === 2
+    ? "Encouraging / Providing Training"
+    : num === 3
+    ? "Providing Training in Management, Technical, Vocational & Entrepreneurial Skills"
+    : num === 4
+    ? "Setting Training Standards and Certification"
+    : num === 5
+    ? "Managing & Administering SIWES"
+    : num === 6
+    ? "Standards, Accreditation & Apprenticeship Activities"
+    : num === 7
+    ? "Administrative & HR Support"
+    : num === 8
+    ? "Revenue, Financial & Audit Support Services"
+    : "KRA";
+}
+
 function useKraRows(kraKey: string, year: number, enabled: boolean) {
   return useQuery<KraRow[]>({
     queryKey: ["kra_rows", kraKey, year],
@@ -330,6 +350,27 @@ function KRAReport() {
     ? "KRA 8 — Revenue, Financial & Audit Support Services"
     : "Corporate Performance";
 
+  const nextKraNumber = kraNumber >= 1 && kraNumber < 8 ? kraNumber + 1 : null;
+  const nextKraTitle = nextKraNumber ? getKraNameByNumber(nextKraNumber) : null;
+  const nextKraLink = nextKraNumber ? `/performance/${encodeURIComponent(`KRA ${nextKraNumber}`)}` : undefined;
+  const nextKraButton = nextKraLink ? (
+    <div className="mt-6">
+      <Link
+        to={nextKraLink}
+        className="inline-flex w-full items-center justify-between rounded-[32px] bg-gradient-to-r from-itf-green via-itf-green/95 to-itf-emerald text-white px-6 py-4 shadow-[0_20px_60px_-20px_rgba(0,0,0,0.35)] transition hover:from-itf-green/90 hover:to-itf-emerald/90"
+      >
+        <div className="space-y-1 text-left">
+          <div className="text-xs uppercase tracking-[0.3em] text-white/70">Next KRA</div>
+          <div className="text-base font-black tracking-tight">KRA {nextKraNumber}</div>
+        </div>
+        <div className="text-right">
+          <div className="text-sm font-semibold text-white">{nextKraTitle}</div>
+          <div className="text-[11px] uppercase tracking-[0.22em] text-white/80">Continue</div>
+        </div>
+      </Link>
+    </div>
+  ) : null;
+
   if (!year || !hasData(year)) {
     return (
       <DashboardLayout title={dashboardTitle} subtitle={year ? `TY ${year}` : "Loading…"}>
@@ -441,6 +482,7 @@ function KRAReport() {
               );
             })}
           </div>
+          {nextKraButton}
         </div>
       </DashboardLayout>
     );
@@ -505,6 +547,7 @@ function KRAReport() {
               ];
             })}
           </div>
+          {nextKraButton}
         </div>
       </DashboardLayout>
     );
@@ -548,6 +591,7 @@ function KRAReport() {
         )}
 
         <CommentaryBlock notes={notes} />
+        {nextKraButton}
       </div>
     </DashboardLayout>
   );
