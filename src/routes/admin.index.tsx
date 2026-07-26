@@ -325,6 +325,7 @@ async function fetchLatestKraRowsForMode(mode: KRAImportMode) {
   const byYear = new Map<number, Array<{ year: number; kra: string | null; subgroup: string | null; kpi: string | null; sort_order: number | null }>>();
   for (const row of data ?? []) {
     if (!isKraRowInScope(row.kra, mode)) continue;
+    if (mode === "metric" && row.kpi === "Total Number Trained") continue;
     const rows = byYear.get(row.year) ?? [];
     rows.push(row);
     byYear.set(row.year, rows);
@@ -462,6 +463,7 @@ function TableEditor({ def, year }: { def: TableDef; year: number }) {
   const allRows = query.data ?? [];
   const rows = def.tableKey === "kra_rows"
     ? allRows.filter((row: any) => isKraRowInScope(row.kra, def.tableKey === "kra_rows" ? kraImportMode : undefined))
+        .filter((row: any) => !(kraImportMode === "metric" && row.kpi === "Total Number Trained"))
     : filterRevenueRowsByMode(allRows, def.mode);
   const visibleFields = getFormFields(def, def.tableKey === "kra_rows" ? kraImportMode : undefined);
   const allowMultiSelect = def.tableKey === "kra_rows" || def.tableKey === "area_revenue";

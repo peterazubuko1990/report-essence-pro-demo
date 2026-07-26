@@ -161,14 +161,18 @@ export function DataTable({
   headers,
   rows,
   className = "",
-}: { headers: string[]; rows: (string | number | ReactNode)[][]; className?: string }) {
+  stickyHeader = false,
+}: { headers: string[]; rows: (string | number | ReactNode)[][]; className?: string; stickyHeader?: boolean }) {
   return (
-    <div className={`overflow-x-auto ${className}`}>
+    <div className={`overflow-x-auto ${stickyHeader ? "overflow-y-auto max-h-[32rem]" : ""} ${className}`}>
       <table className="min-w-full text-base border-separate border-spacing-0">
         <thead>
           <tr className="bg-itf-green text-white">
             {headers.map((h) => (
-              <th key={h} className="px-6 py-5 text-left font-semibold text-base uppercase tracking-[0.14em]">
+              <th
+                key={h}
+                className={`px-6 py-5 text-left font-semibold text-base uppercase tracking-[0.14em] ${stickyHeader ? "sticky top-0 z-10 bg-itf-green" : ""}`}
+              >
                 {h}
               </th>
             ))}

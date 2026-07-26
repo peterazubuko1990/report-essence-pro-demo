@@ -32,14 +32,36 @@ const renderPctWithTrend = (previousPct: number | null | undefined, currentPct: 
   const change = currentPct - previousPct;
   const tone = change > 0 ? "text-itf-green" : change < 0 ? "text-itf-red" : "text-itf-ink/70";
   const arrow = change > 0 ? "▲" : change < 0 ? "▼" : "•";
+  const label = change > 0 ? "Increase" : change < 0 ? "Drop" : "Stable";
 
   return (
     <div className="inline-flex items-center gap-2">
       <span className="text-sm font-semibold text-itf-ink/70">{formattedCurrent}</span>
-      <span className={`text-sm font-semibold ${tone}`} aria-label="trend indicator">
-        {arrow}
+      <span className={`text-sm font-semibold ${tone}`} aria-label={`trend indicator: ${label}`}>
+        {arrow} {label}
       </span>
     </div>
+  );
+};
+
+const renderValueWithTrend = (previousValue: number | null | undefined, currentValue: number | null | undefined) => {
+  if (currentValue === undefined || currentValue === null) {
+    return <span className="text-sm font-semibold text-itf-ink/60">—</span>;
+  }
+
+  if (previousValue === undefined || previousValue === null) {
+    return <span className="text-sm font-semibold text-itf-ink/70">{formatNumber(currentValue)}</span>;
+  }
+
+  const change = Number(currentValue) - Number(previousValue);
+  const tone = change > 0 ? "text-itf-green" : change < 0 ? "text-itf-red" : "text-itf-ink/70";
+  const arrow = change > 0 ? "▲" : change < 0 ? "▼" : "•";
+  const label = change > 0 ? "Increase" : change < 0 ? "Drop" : "Stable";
+
+  return (
+    <span className={`text-sm font-semibold ${tone}`} aria-label={`trend indicator: ${label}`}>
+      {arrow} {label}
+    </span>
   );
 };
 
@@ -196,7 +218,7 @@ export const MetricComparisonSection = memo(function MetricComparisonSection({
     () =>
       rows.map((row, index) =>
         previousYear
-          ? [index + 1, row.kpi, formatNumber(row.previousValue ?? null), formatNumber(row.currentValue ?? null)]
+          ? [index + 1, row.kpi, formatNumber(row.previousValue ?? null), <div key={`${row.kpi}-${index}`} className="inline-flex items-center gap-2"><span>{formatNumber(row.currentValue ?? null)}</span>{renderValueWithTrend(row.previousValue, row.currentValue)}</div>]
           : [index + 1, row.kpi, formatNumber(row.currentValue ?? null)]
       ),
     [previousYear, rows]
@@ -204,15 +226,8 @@ export const MetricComparisonSection = memo(function MetricComparisonSection({
 
   return (
     <Section kicker="Performance" title={title}>
-      <div className="grid gap-6 xl:grid-cols-[1.15fr_0.95fr]">
-        <div className="rounded-[30px] border border-itf-rule bg-gradient-to-br from-white via-itf-canvas/50 to-white p-3 shadow-[0_16px_40px_-24px_rgba(0,0,0,0.35)] sm:p-5">
-          <DataTable headers={headers} rows={tableRows} className="rounded-[24px] bg-white" />
-        </div>
-        <div className="overflow-hidden rounded-[30px] border border-itf-rule bg-white shadow-[0_16px_40px_-24px_rgba(0,0,0,0.35)]">
-          <ChartCard title={`${title} — Values`} kicker="Year-on-Year" defaultKind="bar" allowKinds={["bar"]}>
-            {(kind) => <ChartRenderer data={data} xKey="kpi" series={series} kind={kind} unit="" />}
-          </ChartCard>
-        </div>
+      <div className="rounded-[30px] border border-itf-rule bg-gradient-to-br from-white via-itf-canvas/50 to-white p-3 shadow-[0_16px_40px_-24px_rgba(0,0,0,0.35)] sm:p-5">
+        <DataTable headers={headers} rows={tableRows} className="rounded-[24px] bg-white" />
       </div>
     </Section>
   );

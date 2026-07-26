@@ -3,6 +3,7 @@ import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
 import { EmptyState } from "@/components/dashboard/widgets";
+import { ChartCard, ChartRenderer } from "@/components/dashboard/ChartKit";
 import { ReportHeader, ComparisonTable, PercentageChart, MetricComparisonSection, CommentaryBlock } from "@/components/dashboard/KraReportBlocks";
 import { useYear } from "@/lib/year-context";
 import { supabase } from "@/integrations/supabase/client";
@@ -74,6 +75,14 @@ function buildMetricRows(currentRows: KraRow[], previousRows: KraRow[]) {
   });
 }
 
+function buildMetricChartData(rows: Array<{ kpi: string; previousValue?: number | null; currentValue?: number | null }>, currentYear: number, previousYear: number | null) {
+  return rows.map((row) => ({
+    kpi: row.kpi,
+    ...(previousYear ? { [String(previousYear)]: Number(row.previousValue ?? 0) } : {}),
+    [String(currentYear)]: Number(row.currentValue ?? 0),
+  }));
+}
+
 function formatDataSlideHeading(subgroup: string) {
   const cleaned = subgroup.trim();
   if (!cleaned) return "OVERALL";
@@ -136,14 +145,15 @@ function KRAReport() {
   const params = Route.useParams();
   const { year, yearsWithData, hasData } = useYear();
   const title = params.kra ? decodeURIComponent(params.kra) : "KRA 1";
-  const isKra1 = title.toUpperCase().startsWith("KRA 1");
-  const isKra2 = title.toUpperCase().startsWith("KRA 2");
-  const isKra3 = title.toUpperCase().startsWith("KRA 3");
-  const isKra4 = title.toUpperCase().startsWith("KRA 4");
-  const isKra5 = title.toUpperCase().startsWith("KRA 5");
-  const isKra6 = title.toUpperCase().startsWith("KRA 6");
-  const isKra7 = title.toUpperCase().startsWith("KRA 7");
-  const isKra8 = title.toUpperCase().startsWith("KRA 8");
+  const kraNumber = Number(title.match(/KRA\s*(\d+)/i)?.[1] ?? 0);
+  const isKra1 = kraNumber === 1;
+  const isKra2 = kraNumber === 2;
+  const isKra3 = kraNumber === 3;
+  const isKra4 = kraNumber === 4;
+  const isKra5 = kraNumber === 5;
+  const isKra6 = kraNumber === 6;
+  const isKra7 = kraNumber === 7;
+  const isKra8 = kraNumber === 8;
   const kraPrefix = isKra1
     ? "KRA 1"
     : isKra2
@@ -186,7 +196,7 @@ function KRAReport() {
   const previousRows = previousQuery.data ?? [];
 
   const comparisonRows = useMemo(() => buildComparisonRows(currentRows, previousRows), [currentRows, previousRows]);
-  const isMetricKra = isKra5 || isKra6 || isKra7;
+  const isMetricKra = isKra5 || isKra6 || isKra7 || isKra8;
 
   const metricGroups = useMemo(() => {
     if (!isMetricKra) return [];
@@ -196,12 +206,14 @@ function KRAReport() {
     }
 
     const groups = new Map<string, KraRow[]>();
-    currentRows.forEach((row) => {
-      const subgroup = (row.subgroup ?? "Overall").trim() || "Overall";
-      const existing = groups.get(subgroup);
-      if (existing) existing.push(row);
-      else groups.set(subgroup, [row]);
-    });
+    currentRows
+      .filter((row) => !(isKra6 && row.kpi === "Total Number Trained"))
+      .forEach((row) => {
+        const subgroup = (row.subgroup ?? "Overall").trim() || "Overall";
+        const existing = groups.get(subgroup);
+        if (existing) existing.push(row);
+        else groups.set(subgroup, [row]);
+      });
 
     return Array.from(groups.entries())
       .map(([subgroup, rows]) => {
@@ -212,7 +224,7 @@ function KRAReport() {
 
         return {
           subgroup,
-          rows: buildMetricRows(rows, previousSubgroupRows),
+          rows: buildMetricRows(rows.filter((row) => !(isKra6 && row.kpi === "Total Number Trained")), previousSubgroupRows),
         };
       })
       .sort((a, b) => {
@@ -297,7 +309,6 @@ function KRAReport() {
     ? "Comparative performance analysis for KRA 8 subgroup performance across the selected reporting years."
     : title;
 
-  const kraNumber = isKra1 ? 1 : isKra2 ? 2 : isKra3 ? 3 : isKra4 ? 4 : isKra5 ? 5 : isKra6 ? 6 : isKra7 ? 7 : isKra8 ? 8 : null;
   const topKraLabel = kraNumber ? `KRA ${kraNumber}` : "KRA Report";
   const bigHeading = kraNumber ? `KEY RESULT AREA ${kraNumber}: ${pageTitle}` : pageTitle;
 
@@ -343,6 +354,8 @@ function KRAReport() {
             ? "KRA 5 — Managing & Administering SIWES"
             : isKra6
             ? "KRA 6 — Standards, Accreditation & Apprenticeship Activities"
+            : isKra8
+            ? "KRA 8 — Revenue, Financial & Audit Support Services"
             : "KRA 7 — Administrative & HR Support"
         }
         subtitle={prevYear ? `TY ${year} vs TY ${prevYear}` : `TY ${year}`}
@@ -361,15 +374,72 @@ function KRAReport() {
           <ReportHeader title={pageTitle} subtitle={pageSubtitle} />
 
           <div className="space-y-8">
-            {metricGroups.map(({ subgroup, rows }) => (
-              <div key={`${subgroup}-metric`} className="rounded-[44px] border border-itf-rule bg-white p-6 shadow-[0_22px_60px_-26px_rgba(0,0,0,0.25)] sm:p-8">
-                <div className="mb-6 border-b border-itf-rule/70 pb-4">
-                  <div className="text-[11px] uppercase tracking-[0.32em] text-itf-red font-semibold">Metric values</div>
-                  <h3 className="mt-3 text-2xl font-semibold text-itf-ink">{subgroup === "Overall" ? "Overall KPI Values" : subgroup}</h3>
+            {metricGroups.map(({ subgroup, rows }) => {
+              const chartRows = isKra6
+                ? rows.filter((row) => {
+                    const current = Number(row.currentValue ?? 0);
+                    const previous = Number(row.previousValue ?? 0);
+                    return current !== 0 || previous !== 0;
+                  })
+                : rows;
+
+              const maxValue = chartRows.reduce((largest, row) => {
+                const current = Number(row.currentValue ?? 0);
+                const previous = Number(row.previousValue ?? 0);
+                return Math.max(largest, current, previous);
+              }, 0);
+
+              const focusedRows = chartRows.filter((row) => {
+                const current = Number(row.currentValue ?? 0);
+                const previous = Number(row.previousValue ?? 0);
+                const largestSeen = Math.max(current, previous);
+                return maxValue > 0 && largestSeen > 0 && largestSeen <= maxValue * 0.35;
+              });
+
+              const focusRows = focusedRows.length >= 2 ? focusedRows : chartRows.slice(0, Math.min(3, chartRows.length));
+              const fullChartData = buildMetricChartData(chartRows, year, prevYear);
+              const focusChartData = buildMetricChartData(focusRows, year, prevYear);
+
+              return (
+                <div key={`${subgroup}-metric`} className="rounded-[44px] border border-itf-rule bg-white p-6 shadow-[0_22px_60px_-26px_rgba(0,0,0,0.25)] sm:p-8">
+                  <div className="mb-6 border-b border-itf-rule/70 pb-4">
+                    <div className="text-[11px] uppercase tracking-[0.32em] text-itf-red font-semibold">Metric values</div>
+                    <h3 className="mt-3 text-2xl font-semibold text-itf-ink">{subgroup === "Overall" ? "Overall KPI Values" : subgroup}</h3>
+                  </div>
+                  <MetricComparisonSection title={subgroup === "Overall" ? `${pageTitle} — KPI values` : `${subgroup} — KPI values`} currentYear={year} previousYear={prevYear} rows={rows} />
+
+                  {(isKra5 || isKra6 || isKra8) && focusRows.length > 0 && focusRows.length < chartRows.length ? (
+                    <div className="mt-8 space-y-4">
+                      <div className="rounded-[24px] border border-itf-rule bg-itf-canvas/40 p-4">
+                        <div className="text-[11px] uppercase tracking-[0.24em] text-itf-gold font-semibold">Focused view</div>
+                        <h4 className="mt-2 text-xl font-semibold text-itf-ink">Smaller KPI values</h4>
+                        <p className="mt-2 text-sm text-itf-ink/70">
+                          Two charts are shown because the first uses a full-scale view for the larger KPIs, while this second chart magnifies the smaller values so they remain readable and comparable.
+                        </p>
+                      </div>
+                      <div className="grid gap-6 xl:grid-cols-2">
+                        <div className="overflow-hidden rounded-[30px] border border-itf-rule bg-white shadow-[0_16px_40px_-24px_rgba(0,0,0,0.35)]">
+                          <ChartCard title={`${subgroup === "Overall" ? pageTitle : subgroup} — full view`} kicker="Overview" defaultKind="bar" allowKinds={["bar", "line", "area"]}>
+                            {(kind) => <ChartRenderer data={fullChartData} xKey="kpi" series={prevYear ? [String(prevYear), String(year)] : [String(year)]} kind={kind} unit="" />}
+                          </ChartCard>
+                        </div>
+                        <div className="overflow-hidden rounded-[30px] border border-itf-rule bg-white shadow-[0_16px_40px_-24px_rgba(0,0,0,0.35)]">
+                          <ChartCard title={`${subgroup === "Overall" ? pageTitle : subgroup} — smaller KPI values`} kicker="Focused comparison" defaultKind="bar" allowKinds={["bar", "line", "area"]}>
+                            {(kind) => <ChartRenderer data={focusChartData} xKey="kpi" series={prevYear ? [String(prevYear), String(year)] : [String(year)]} kind={kind} unit="" />}
+                          </ChartCard>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="mt-8 overflow-hidden rounded-[30px] border border-itf-rule bg-white shadow-[0_16px_40px_-24px_rgba(0,0,0,0.35)]">
+                      <ChartCard title={`${subgroup === "Overall" ? pageTitle : subgroup} — full view`} kicker="Overview" defaultKind="bar" allowKinds={["bar", "line", "area"]}>
+                        {(kind) => <ChartRenderer data={fullChartData} xKey="kpi" series={prevYear ? [String(prevYear), String(year)] : [String(year)]} kind={kind} unit="" />}
+                      </ChartCard>
+                    </div>
+                  )}
                 </div>
-                <MetricComparisonSection title={subgroup === "Overall" ? `${pageTitle} — KPI values` : `${subgroup} — KPI values`} currentYear={year} previousYear={prevYear} rows={rows} />
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       </DashboardLayout>

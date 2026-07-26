@@ -145,7 +145,7 @@ function Revenue() {
         </Section>
       </div>
 
-      <Section kicker="Map" title="Nigeria Revenue by State">
+      <Section kicker="Map" title="ITF Revenue by State">
         <NigeriaRevenueMap rows={areaCurrent} />
       </Section>
 
@@ -223,7 +223,9 @@ function Revenue() {
                   <AccordionContent className="px-4 pb-4">
                     <div className="overflow-x-auto">
                       <DataTable
-                        headers={["Office", "Stream", `${prevYear ?? "Prev"} Target`, `${prevYear ?? "Prev"} Actual`, `${prevYear ?? "Prev"} % achieved`, `${year} Target`, `${year} Actual`, `${year} % achieved`, "YoY"]}
+                        stickyHeader
+                        className="max-h-[32rem]"
+                        headers={["Office", "Stream", `${prevYear ?? "Prev"} Target`, `${prevYear ?? "Prev"} Actual`, `${prevYear ?? "Prev"} % achieved`, `${year} Target`, `${year} Actual`, `${year} Actual`, `${year} % achieved`, "YoY"]}
                         rows={section.breakdown.flatMap((office) => office.streams.map((stream) => {
                           const prevTarget = Number(stream.previousTarget ?? 0);
                           const prevActual = Number(stream.previousActual ?? 0);
