@@ -10,6 +10,68 @@ import { useYear } from "@/lib/year-context";
 import { supabase } from "@/integrations/supabase/client";
 import { buildRevenueAggregation } from "@/lib/revenue-data";
 
+const formatChartAmount = (value: number) => {
+  const abs = Math.abs(value);
+
+  if (abs < 1) {
+    const millions = value * 1000;
+    return `₦${millions.toLocaleString(undefined, { maximumFractionDigits: millions >= 100 ? 0 : 1 })}M`;
+  }
+
+  return `₦${value.toFixed(2)}B`;
+};
+
+const formatChartAxis = (value: number) => {
+  const abs = Math.abs(value);
+
+  if (abs < 1) {
+    const millions = value * 1000;
+    return `${millions.toLocaleString(undefined, { maximumFractionDigits: millions >= 100 ? 0 : 1 })}M`;
+  }
+
+  return `${value.toFixed(2)}B`;
+};
+
+function RevenueTooltip({ active, payload, label }: { active?: boolean; payload?: Array<any>; label?: string | number }) {
+  if (!active || !payload?.length) return null;
+
+  const firstEntry = payload[0] as any;
+  const row = firstEntry?.payload as Record<string, any> | undefined;
+  if (!row) return null;
+
+  const previousValue = Number(row.prev ?? row.previous ?? 0);
+  const currentValue = Number(row.current ?? row.value ?? 0);
+  const delta = currentValue - previousValue;
+  const pct = previousValue === 0 ? 0 : (delta / previousValue) * 100;
+
+  return (
+    <div className="rounded-lg border border-itf-rule bg-white/95 px-3 py-2 text-sm shadow-lg">
+      <div className="mb-2 font-semibold text-itf-ink">{String(label ?? "Value")}</div>
+      <div className="space-y-1">
+        <div className="flex items-center justify-between gap-3">
+          <span className="font-medium text-itf-ink/70">Previous</span>
+          <span className="font-semibold text-itf-ink">{formatChartAmount(previousValue)}</span>
+        </div>
+        <div className="flex items-center justify-between gap-3">
+          <span className="font-medium text-itf-ink/70">Current</span>
+          <span className="font-semibold text-itf-ink">{formatChartAmount(currentValue)}</span>
+        </div>
+        <div className={`flex items-center justify-between gap-3 ${delta >= 0 ? "text-itf-green" : "text-itf-red"}`}>
+          <span className="font-medium">Difference</span>
+          <span className="font-semibold">{delta >= 0 ? "+" : ""}{formatChartAmount(Math.abs(delta))}</span>
+        </div>
+        <div className={`flex items-center justify-between gap-3 ${pct >= 0 ? "text-itf-green" : "text-itf-red"}`}>
+          <span className="font-medium">YoY</span>
+          <span className="font-semibold inline-flex items-center gap-1">
+            <span>{pct >= 0 ? "▲" : "▼"}</span>
+            <span>{pct >= 0 ? "+" : ""}{pct.toFixed(1)}%</span>
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export const Route = createFileRoute("/revenue")({
   head: () => ({
     meta: [
@@ -66,10 +128,15 @@ function Revenue() {
   const tcByCat = (["A", "B", "C"] as const).map((c) => {
     const section = aggregation.sections.find((item) => item.id === `category-${c}`);
     const training = section?.rows.find((row) => row.stream === "Training Contribution");
+    const prevValue = (training?.previousActual ?? 0) / 1_000_000_000;
+    const currentValue = (training?.actual ?? 0) / 1_000_000_000;
+
     return {
       category: `Category ${c}`,
-      [prevLabel]: (training?.previousActual ?? 0) / 1_000_000_000,
-      [currentLabel]: (training?.actual ?? 0) / 1_000_000_000,
+      prev: prevValue,
+      current: currentValue,
+      [prevLabel]: prevValue,
+      [currentLabel]: currentValue,
     };
   });
 
@@ -133,8 +200,8 @@ function Revenue() {
               <BarChart data={tcByCat} margin={{ top: 8, right: 16, left: 0, bottom: 0 }}>
                 <CartesianGrid stroke="#e5e7eb" vertical={false} />
                 <XAxis dataKey="category" tick={{ fontSize: 12 }} />
-                <YAxis tick={{ fontSize: 12 }} unit="B" />
-                <Tooltip formatter={(v: number) => `₦${v.toFixed(2)}B`} />
+                <YAxis tick={{ fontSize: 12 }} tickFormatter={(value: number) => formatChartAxis(Number(value))} />
+                <Tooltip content={<RevenueTooltip />} />
                 <Legend />
                 <Bar dataKey={prevLabel} fill="#C8102E" />
                 <Bar dataKey={currentLabel} fill="#00723F" />
@@ -157,7 +224,7 @@ function Revenue() {
                 <CartesianGrid stroke="#e5e7eb" vertical={false} />
                 <XAxis type="number" tick={{ fontSize: 12 }} unit="B" />
                 <YAxis dataKey="office" type="category" width={160} tick={{ fontSize: 12 }} />
-                <Tooltip formatter={(v: number) => `₦${v.toFixed(2)}B`} />
+                <Tooltip content={<RevenueTooltip />} />
                 <Legend />
                 <Bar dataKey="prev" name={`${prevLabel} Actual`} fill="#C8102E" />
                 <Bar dataKey="current" name={`${currentLabel} Actual`} fill="#00723F" />
@@ -273,9 +340,9 @@ function Revenue() {
                             margin={{ top: 12, right: 16, left: 160, bottom: 12 }}
                           >
                             <CartesianGrid stroke="#e5e7eb" vertical={false} />
-                            <XAxis type="number" tick={{ fontSize: 12 }} unit="B" />
+                            <XAxis type="number" tick={{ fontSize: 12 }} tickFormatter={(value: number) => formatChartAxis(Number(value))} />
                             <YAxis dataKey="office" type="category" width={160} tick={{ fontSize: 12 }} />
-                            <Tooltip formatter={(v: number) => `₦${v.toFixed(2)}B`} />
+                            <Tooltip content={<RevenueTooltip />} />
                             <Legend />
                             <Bar dataKey="prev" name={`${prevLabel} Actual`} fill="#C8102E" />
                             <Bar dataKey="current" name={`${currentLabel} Actual`} fill="#00723F" />
