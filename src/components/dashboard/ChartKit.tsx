@@ -22,7 +22,7 @@ const COLORS = ["#00723F", "#C8102E", "#E6B422", "#1F6FB2", "#7a8a99", "#6d4c41"
 const PREV_COLOR = "#C8102E"; // previous year (red)
 const CURRENT_COLOR = "#00723F"; // current year (green)
 
-function TooltipContent({ active, payload, label, unit }: { active?: boolean; payload?: Array<any>; label?: string | number; unit?: string }) {
+function TooltipContent({ active, payload, label, unit, deltaMode = "relative" }: { active?: boolean; payload?: Array<any>; label?: string | number; unit?: string; deltaMode?: "relative" | "difference" }) {
   if (!active || !payload?.length) return null;
 
   const formatValue = (value: unknown) => {
@@ -43,17 +43,27 @@ function TooltipContent({ active, payload, label, unit }: { active?: boolean; pa
         {payload.map((entry, index) => {
           const currentValue = Number(entry.value ?? 0);
           const prevValue = index > 0 ? Number(payload[index - 1].value ?? 0) : null;
-          const pctChange = prevValue !== null && prevValue !== 0 && Number.isFinite(currentValue) && Number.isFinite(prevValue)
+
+          const percentDifference = unit === "%" && prevValue !== null && Number.isFinite(currentValue) && Number.isFinite(prevValue)
+            ? currentValue - prevValue
+            : null;
+
+          const pctChange = deltaMode === "relative" && prevValue !== null && prevValue !== 0 && Number.isFinite(currentValue) && Number.isFinite(prevValue)
             ? ((currentValue - prevValue) / prevValue) * 100
             : null;
 
-          const tone = pctChange !== null && pctChange > 0 ? "text-itf-green" : pctChange !== null && pctChange < 0 ? "text-itf-red" : "text-itf-ink/70";
+          const tone = percentDifference !== null && percentDifference > 0 ? "text-itf-green" : percentDifference !== null && percentDifference < 0 ? "text-itf-red" : pctChange !== null && pctChange > 0 ? "text-itf-green" : pctChange !== null && pctChange < 0 ? "text-itf-red" : "text-itf-ink/70";
 
           return (
             <div key={`${entry.dataKey ?? entry.name ?? index}`} className="flex items-center justify-between gap-3">
               <span className="font-medium text-itf-ink/70">{entry.name ?? entry.dataKey}</span>
               <div className="text-right">
                 <div className="font-semibold text-itf-ink">{formatValue(entry.value)}</div>
+                {percentDifference !== null && deltaMode === "difference" && (
+                  <div className={`text-[11px] font-semibold ${tone}`}>
+                    {percentDifference > 0 ? "▲" : percentDifference < 0 ? "▼" : "•"} {Math.abs(percentDifference).toFixed(2)}%
+                  </div>
+                )}
                 {pctChange !== null && (
                   <div className={`text-[11px] font-semibold ${tone}`}>
                     {pctChange > 0 ? "▲" : pctChange < 0 ? "▼" : "•"} {Math.abs(pctChange).toFixed(1)}%
@@ -101,7 +111,7 @@ export function ChartTypeSelector({
  */
 export function ChartRenderer({
   data, xKey, series, kind, height = 288, unit,
-  seriesColors,
+  seriesColors, tooltipDeltaMode = "relative",
 }: {
   data: any[];
   xKey: string;
@@ -110,6 +120,7 @@ export function ChartRenderer({
   height?: number;
   unit?: string;
   seriesColors?: string[];
+  tooltipDeltaMode?: "relative" | "difference";
 }) {
   const defaultColors = seriesColors ?? COLORS;
   const colors = (!seriesColors && series.length >= 2)
@@ -127,7 +138,7 @@ export function ChartRenderer({
             <CartesianGrid stroke="#e5e7eb" vertical={false} />
             <XAxis dataKey={xKey} tick={{ fontSize: 13, fontWeight: 600 }} angle={-15} textAnchor="end" />
             <YAxis tick={{ fontSize: 13, fontWeight: 600 }} unit={unit} />
-            <Tooltip content={<TooltipContent unit={unit} />} />
+            <Tooltip content={<TooltipContent unit={unit} deltaMode={tooltipDeltaMode} />} />
             <Legend wrapperStyle={{ fontSize: 13, fontWeight: 600 }} />
             {series.map((s, i) => <Bar key={s} dataKey={s} fill={colors[i % colors.length]} />)}
           </BarChart>
@@ -136,7 +147,7 @@ export function ChartRenderer({
             <CartesianGrid stroke="#e5e7eb" vertical={false} />
             <XAxis dataKey={xKey} tick={{ fontSize: 13, fontWeight: 600 }} angle={-15} textAnchor="end" />
             <YAxis tick={{ fontSize: 13, fontWeight: 600 }} unit={unit} />
-            <Tooltip content={<TooltipContent unit={unit} />} />
+            <Tooltip content={<TooltipContent unit={unit} deltaMode={tooltipDeltaMode} />} />
             <Legend wrapperStyle={{ fontSize: 13, fontWeight: 600 }} />
             {series.map((s, i) => <Line key={s} type="monotone" dataKey={s} stroke={colors[i % colors.length]} strokeWidth={2} dot />)}
           </LineChart>
@@ -145,7 +156,7 @@ export function ChartRenderer({
             <CartesianGrid stroke="#e5e7eb" vertical={false} />
             <XAxis dataKey={xKey} tick={{ fontSize: 13, fontWeight: 600 }} angle={-15} textAnchor="end" />
             <YAxis tick={{ fontSize: 13, fontWeight: 600 }} unit={unit} />
-            <Tooltip content={<TooltipContent unit={unit} />} />
+            <Tooltip content={<TooltipContent unit={unit} deltaMode={tooltipDeltaMode} />} />
             <Legend wrapperStyle={{ fontSize: 13, fontWeight: 600 }} />
             {series.map((s, i) => <Area key={s} type="monotone" dataKey={s} fill={colors[i % colors.length]} stroke={colors[i % colors.length]} fillOpacity={0.35} />)}
           </AreaChart>
@@ -165,7 +176,7 @@ export function ChartRenderer({
             {series.map((s, i) => (
               <Radar key={s} name={s} dataKey={s} stroke={colors[i % colors.length]} fill={colors[i % colors.length]} fillOpacity={0.35} />
             ))}
-            <Tooltip content={<TooltipContent unit={unit} />} />
+            <Tooltip content={<TooltipContent unit={unit} deltaMode={tooltipDeltaMode} />} />
             <Legend />
           </RadarChart>
         )}

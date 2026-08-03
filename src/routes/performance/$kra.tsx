@@ -540,7 +540,7 @@ function KRAReport() {
                           <div className="mt-8 space-y-6">
                     <>
                       <ComparisonTable title={`${dataHeading} — Core Performance`} currentYear={year} previousYear={prevYear} rows={rows} />
-                      <PercentageChart title={`${formatChartTitle(subgroup)} — Overall Achievement`} currentYear={year} previousYear={prevYear} rows={rows} />
+                      <PercentageChart title={`${formatChartTitle(subgroup)} — Overall Achievement`} currentYear={year} previousYear={prevYear} rows={rows} deltaMode="difference" />
                     </>
                   </div>
                 </div>,
@@ -587,6 +587,7 @@ function KRAReport() {
             currentYear={year}
             previousYear={prevYear}
             rows={comparisonRows}
+            deltaMode="difference"
           />
         )}
 
