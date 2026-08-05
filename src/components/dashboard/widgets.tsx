@@ -85,15 +85,15 @@ export function EnhancedKpi({
   }
 
   return (
-    <div className={`bg-white border border-itf-rule border-l-4 ${borderColor} rounded-lg px-6 py-5 shadow-md hover:shadow-lg transition-shadow`}>
+    <div className={`bg-white border border-itf-rule border-l-4 ${borderColor} rounded-lg px-4 sm:px-6 py-4 sm:py-5 shadow-md hover:shadow-lg transition-shadow flex flex-col`}>
       {/* Card Header / Label */}
       <div className="text-sm uppercase tracking-[0.16em] text-itf-ink/80 font-black mb-2">{label}</div>
       
       {/* Current Year Value - Largest Element */}
-      <div className="text-6xl sm:text-7xl font-black text-itf-ink leading-none mb-2">{formatValue(currentValue)}</div>
-      
+      <div className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black text-itf-ink leading-tight mb-2 break-words">{formatValue(currentValue)}</div>
+
       {/* Year Badge */}
-      <div className="text-base font-black text-itf-ink/80 mb-5">TY {currentYear}</div>
+      <div className="text-sm sm:text-base font-black text-itf-ink/80 mb-4">TY {currentYear}</div>
 
       {hasPreviousData ? (
         <>
@@ -103,27 +103,27 @@ export function EnhancedKpi({
           {/* Comparison Section */}
           <div className="space-y-3">
             {/* Comparison Label */}
-            <div className="text-sm font-black text-itf-ink/80 uppercase tracking-wide">
+            <div className="text-xs sm:text-sm font-black text-itf-ink/80 uppercase tracking-wide">
               TY {currentYear} vs TY {previousYear}
             </div>
 
             {/* Previous Year Value */}
             <div className="flex items-baseline gap-2">
-              <span className="text-sm font-black text-itf-ink/70">TY {previousYear}</span>
-              <span className="text-xl font-black text-itf-ink">{formatValue(previousValue as number)}</span>
+              <span className="text-xs sm:text-sm font-black text-itf-ink/70">TY {previousYear}</span>
+              <span className="text-lg sm:text-xl font-black text-itf-ink">{formatValue(previousValue as number)}</span>
             </div>
 
             {/* Performance Indicator */}
-            <div className={`${perfBgTone} rounded-md px-4 py-3 flex items-center justify-between`}> 
+            <div className={`${perfBgTone} rounded-md px-3 py-2 flex items-center justify-between`}> 
               <div className={`flex items-center gap-3 ${perfTone}`}>
-                <span className="text-xl font-black">
+                <span className="text-lg sm:text-xl font-black">
                   {perfDirection === "up" ? "▲" : perfDirection === "down" ? "▼" : "–"}
                 </span>
-                <span className="text-base font-black">
+                <span className="text-sm sm:text-base font-black break-words">
                   {diff !== null ? (diff > 0 ? "+" : "") + formatValue(Math.abs(diff)) : "–"}
                 </span>
               </div>
-              <span className={`text-base font-black ${perfTone}`}>
+              <span className={`text-sm sm:text-base font-black ${perfTone}`}>
                 {pctChange !== null ? (pctChange >= 0 ? "+" : "") + pctChange.toFixed(1) + "%" : "–"}
               </span>
             </div>

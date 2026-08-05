@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
-import { Kpi, Note, Section, DataTable, PctBar, EmptyState } from "@/components/dashboard/widgets";
+import { EnhancedKpi, Kpi, Note, Section, DataTable, PctBar, EmptyState } from "@/components/dashboard/widgets";
 import { NigeriaRevenueMap } from "@/components/dashboard/NigeriaRevenueMap";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { fmtNaira, growth, achievement } from "@/data/itf2024";
@@ -170,13 +170,53 @@ function Revenue() {
   }));
   const officeChartHeight = Math.max(340, officeRows.length * 36);
 
+  const corpOfficeRow = aggregation.sections
+    .flatMap((s) => s.breakdown)
+    .find((b) => String(b.office).trim() === "Corporate Office Abuja") ?? null;
+
   return (
     <DashboardLayout title="Revenue Analysis" subtitle={prevYear ? `Live revenue data for TY ${year} with TY ${prevYear} comparisons.` : `Live revenue data for TY ${year}.`}>
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Kpi label={`Training Contribution ${year}`} value={fmtNaira(Number(tc?.actual ?? 0))} sub={prevYear ? `${safeGrowth(Number(tc?.actual ?? 0), Number(tc?.previousActual ?? 0)).toFixed(1)}% vs TY ${prevYear}` : "Live from database"} tone={kpiTone(Number(tc?.pct ?? 0))} />
-        <Kpi label={`Course Fee ${year}`} value={fmtNaira(Number(cf?.actual ?? 0))} sub={prevYear ? `${safeGrowth(Number(cf?.actual ?? 0), Number(cf?.previousActual ?? 0)).toFixed(1)}% vs TY ${prevYear}` : "Live from database"} tone={kpiTone(Number(cf?.pct ?? 0))} />
-        <Kpi label={`Other Income ${year}`} value={fmtNaira(Number(oi?.actual ?? 0))} sub={prevYear ? `${safeGrowth(Number(oi?.actual ?? 0), Number(oi?.previousActual ?? 0)).toFixed(1)}% vs TY ${prevYear}` : "Live from database"} tone={kpiTone(Number(oi?.pct ?? 0))} />
-        <Kpi label={`Total Generated ${year}`} value={fmtNaira(currentTotal)} sub="Sum of live revenue streams" tone={currentPct >= 100 ? "good" : currentPct >= 70 ? "warn" : "bad"} />
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+        <EnhancedKpi
+          label="Total Generated"
+          currentValue={currentTotal}
+          previousValue={prevYear ? previousTotal : undefined}
+          currentYear={year}
+          previousYear={prevYear}
+          formatValue={fmtNaira}
+          tone={currentPct >= 100 ? "good" : currentPct >= 70 ? "warn" : "bad"}
+          noteText="Sum of live revenue streams"
+        />
+        <EnhancedKpi
+          label="Training Contribution"
+          currentValue={Number(tc?.actual ?? 0)}
+          previousValue={prevYear ? Number(tc?.previousActual ?? 0) : undefined}
+          currentYear={year}
+          previousYear={prevYear}
+          formatValue={fmtNaira}
+          tone={kpiTone(Number(tc?.pct ?? 0))}
+          noteText={prevYear ? `Live Training Contribution revenue for TY ${year} compared against TY ${prevYear}.` : "Live from database."}
+        />
+        <EnhancedKpi
+          label="Course Fee"
+          currentValue={Number(cf?.actual ?? 0)}
+          previousValue={prevYear ? Number(cf?.previousActual ?? 0) : undefined}
+          currentYear={year}
+          previousYear={prevYear}
+          formatValue={fmtNaira}
+          tone={kpiTone(Number(cf?.pct ?? 0))}
+          noteText={prevYear ? `Live Course Fee stream total for TY ${year} compared against TY ${prevYear}.` : "Live from database."}
+        />
+        <EnhancedKpi
+          label="Other Income"
+          currentValue={Number(oi?.actual ?? 0)}
+          previousValue={prevYear ? Number(oi?.previousActual ?? 0) : undefined}
+          currentYear={year}
+          previousYear={prevYear}
+          formatValue={fmtNaira}
+          tone={kpiTone(Number(oi?.pct ?? 0))}
+          noteText={prevYear ? `Live Other Income stream total for TY ${year} compared against TY ${prevYear}.` : "Live from database."}
+        />
       </div>
 
       <div className="grid md:grid-cols-2 gap-6">
@@ -293,7 +333,9 @@ function Revenue() {
                         stickyHeader
                         className="max-h-[32rem]"
                         headers={["Office", "Stream", `${prevYear ?? "Prev"} Target`, `${prevYear ?? "Prev"} Actual`, `${prevYear ?? "Prev"} % achieved`, `${year} Target`, `${year} Actual`, `${year} Actual`, `${year} % achieved`, "YoY"]}
-                        rows={section.breakdown.flatMap((office) => office.streams.map((stream) => {
+                        rows={section.breakdown
+                          .filter((office) => !(section.kind === "training-centre" && String(office.office).trim() === "Corporate Office Abuja"))
+                          .flatMap((office) => office.streams.map((stream) => {
                           const prevTarget = Number(stream.previousTarget ?? 0);
                           const prevActual = Number(stream.previousActual ?? 0);
                           const prevPct = safeAchievement(prevActual, prevTarget);
@@ -332,7 +374,9 @@ function Revenue() {
                         <ResponsiveContainer width="100%" height="100%">
                           <BarChart
                             layout="vertical"
-                            data={[...section.breakdown].sort((a, b) => b.currentActual - a.currentActual).map((item) => ({
+                            data={[...section.breakdown]
+                              .filter((item) => !(section.kind === "training-centre" && String(item.office).trim() === "Corporate Office Abuja"))
+                              .sort((a, b) => b.currentActual - a.currentActual).map((item) => ({
                               office: item.office,
                               prev: item.previousActual / 1_000_000_000,
                               current: item.currentActual / 1_000_000_000,
@@ -354,6 +398,89 @@ function Revenue() {
                 </AccordionItem>
               );
             })}
+            {/* Dedicated Corporate Office Abuja accordion */}
+            <AccordionItem key="corporate-office-abuja" value="corporate-office-abuja" className="border border-itf-rule rounded-lg overflow-hidden bg-white">
+              <AccordionTrigger className="px-4 py-3 hover:no-underline">
+                <div className="flex flex-1 items-center justify-between gap-3">
+                  <div className="text-left">
+                    <div className="font-semibold text-itf-green">Corporate Office Abuja</div>
+                    <div className="text-xs text-itf-ink/60">Training centre detail</div>
+                  </div>
+                  <div className="text-right text-sm font-semibold text-itf-ink">
+                    <div>{fmtNaira(Number(corpOfficeRow?.currentActual ?? 0))}</div>
+                    <div className="text-[11px] text-itf-ink/60">{year} total</div>
+                  </div>
+                </div>
+              </AccordionTrigger>
+              <AccordionContent className="px-4 pb-4">
+                {corpOfficeRow ? (
+                  <>
+                    <div className="overflow-x-auto">
+                      <DataTable
+                        stickyHeader
+                        className="max-h-[32rem]"
+                        headers={["Office", "Stream", `${prevYear ?? "Prev"} Target`, `${prevYear ?? "Prev"} Actual`, `${prevYear ?? "Prev"} % achieved`, `${year} Target`, `${year} Actual`, `${year} % achieved`, "YoY"]}
+                        rows={corpOfficeRow.streams.map((stream: any) => {
+                          const prevTarget = Number(stream.previousTarget ?? 0);
+                          const prevActual = Number(stream.previousActual ?? 0);
+                          const prevPct = safeAchievement(prevActual, prevTarget);
+                          const curTarget = Number(stream.target ?? 0);
+                          const curActual = Number(stream.actual ?? 0);
+                          const curPct = safeAchievement(curActual, curTarget);
+                          const yoy = safeGrowth(curActual, prevActual);
+                          const absY = Math.min(Math.abs(yoy), 200);
+                          const barPct = (absY / 200) * 100;
+                          const barColor = yoy >= 0 ? "bg-itf-green" : "bg-itf-red";
+
+                          return [
+                            corpOfficeRow.office,
+                            stream.stream,
+                            fmtNaira(prevTarget),
+                            fmtNaira(prevActual),
+                            <PctBar key={`corp-${stream.stream}-prevpct`} value={prevPct} />,
+                            fmtNaira(curTarget),
+                            fmtNaira(curActual),
+                            <PctBar key={`corp-${stream.stream}-curpct`} value={curPct} />,
+                            <div key={`corp-${stream.stream}-yoy`} className="flex items-center gap-3">
+                              <div className={`${yoy >= 0 ? "text-itf-green" : "text-itf-red"} font-semibold text-sm`}>{yoy >= 0 ? "▲" : "▼"}{yoy.toFixed(1)}%</div>
+                              <div className="flex-1 min-w-[100px] max-w-[140px] h-2 bg-itf-rule rounded-sm overflow-hidden">
+                                <div className={`${barColor} h-full`} style={{ width: `${barPct}%` }} />
+                              </div>
+                            </div>,
+                          ];
+                        })}
+                      />
+                    </div>
+                    <div className="mt-6">
+                      <div className="text-sm font-semibold text-itf-ink mb-3">Training Centres — Revenue Comparison</div>
+                      <div className="h-[420px]">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <BarChart
+                            layout="vertical"
+                            data={[{
+                              office: corpOfficeRow.office,
+                              prev: Number(corpOfficeRow.previousActual ?? 0) / 1_000_000_000,
+                              current: Number(corpOfficeRow.currentActual ?? 0) / 1_000_000_000,
+                            }]}
+                            margin={{ top: 12, right: 16, left: 160, bottom: 12 }}
+                          >
+                            <CartesianGrid stroke="#e5e7eb" vertical={false} />
+                            <XAxis type="number" tick={{ fontSize: 12 }} tickFormatter={(value: number) => formatChartAxis(Number(value))} />
+                            <YAxis dataKey="office" type="category" width={160} tick={{ fontSize: 12 }} />
+                            <Tooltip content={<RevenueTooltip prevYearLabel={prevLabel} currentYearLabel={currentLabel} />} />
+                            <Legend />
+                            <Bar dataKey="prev" name={`${prevLabel} Actual`} fill="#C8102E" />
+                            <Bar dataKey="current" name={`${currentLabel} Actual`} fill="#00723F" />
+                          </BarChart>
+                        </ResponsiveContainer>
+                      </div>
+                    </div>
+                  </>
+                ) : (
+                  <div className="p-6 text-sm text-itf-ink/70">No Corporate Office Abuja revenue rows found for the selected year.</div>
+                )}
+              </AccordionContent>
+            </AccordionItem>
           </Accordion>
         </div>
       </Section>

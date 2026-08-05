@@ -60,7 +60,7 @@ function Training() {
 
   return (
     <DashboardLayout title="Training Analysis" subtitle="Programmes, participants and certification outcomes — KRA 3 to KRA 6 plus Staff School.">
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
         <Kpi label="Participants Trained 2024" value={trainingTotals.p2024.toLocaleString()} sub={`+${growth(trainingTotals.p2024, trainingTotals.p2023).toFixed(1)}% vs 2023`} tone="good" />
         <Kpi label="Active Programmes" value="2" sub="SSIP & ITF-NERG carried into 2024" tone="warn" />
         <Kpi label="Discontinued 2023" value="4" sub="AgSEP · N-Power · MSDP · Boot Camp" tone="bad" />

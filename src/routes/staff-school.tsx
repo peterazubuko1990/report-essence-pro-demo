@@ -204,7 +204,7 @@ function StaffSchool() {
 
   return (
     <DashboardLayout title="Staff School" subtitle="Staff School certificate exam performance and live results from the admin module.">
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
         <EnhancedKpi
           label="Total Students"
           currentValue={totalStudentsCur}

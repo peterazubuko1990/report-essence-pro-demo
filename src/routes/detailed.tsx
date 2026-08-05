@@ -68,7 +68,7 @@ function Detailed() {
           <button className="px-3 py-1.5 text-xs border border-itf-rule rounded bg-itf-canvas" onClick={() => { setCat("all"); setStream("all"); setQ(""); }}>Reset</button>
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-4 text-sm">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 mt-4 text-sm">
           <div className="bg-itf-green/5 border border-itf-rule rounded px-3 py-2">
             <div className="text-[10px] uppercase text-itf-ink/60">2023 Actual (sum)</div>
             <div className="text-lg font-bold">{fmtNaira(totals.a23)}</div>
