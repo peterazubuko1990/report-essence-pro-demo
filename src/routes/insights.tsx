@@ -62,17 +62,41 @@ function Insights() {
       )}
 
       <div className="grid md:grid-cols-2 gap-6">
-        <Section kicker="Bottleneck" title="Bottleneck / Constraints">
+        <Section kicker="Bottleneck" title="Bottleneck / Constraints" titleClassName="text-3xl sm:text-4xl">
           {(challenges.data?.length ?? 0) === 0
-            ? <div className="text-sm text-itf-ink/60">No bottleneck recorded.</div>
-            : <ul className="list-disc pl-5 space-y-2 text-sm">{(challenges.data ?? []).map((c) => <li key={c.id}>{c.text}</li>)}</ul>}
+            ? <div className="text-base font-bold text-black">No bottleneck recorded.</div>
+            : <ul className="list-disc pl-5 space-y-3 text-base font-bold text-black">{(challenges.data ?? []).map((c) => <li key={c.id}>{c.text}</li>)}</ul>}
         </Section>
-        <Section kicker="Way Forward" title="Recommendations">
+        <Section kicker="Way Forward" title="Recommendations" titleClassName="text-3xl sm:text-4xl">
           {(wf.data?.length ?? 0) === 0
-            ? <div className="text-sm text-itf-ink/60">No recommendations recorded.</div>
-            : <ul className="list-disc pl-5 space-y-2 text-sm">{(wf.data ?? []).map((r) => <li key={r.id}>{r.text}</li>)}</ul>}
+            ? <div className="text-base font-bold text-black">No recommendations recorded.</div>
+            : <ul className="list-disc pl-5 space-y-3 text-base font-bold text-black">{(wf.data ?? []).map((r) => <li key={r.id}>{r.text}</li>)}</ul>}
         </Section>
       </div>
+
+      <section className="bg-white border border-itf-rule rounded-lg shadow-sm p-6 mt-6">
+        <div className="flex justify-center mb-4">
+          <img src="/itf-logo.jpeg" alt="ITF logo" className="h-20 w-20 rounded-full bg-white p-2 shadow" />
+        </div>
+        <div className="text-center">
+          <div className="text-4xl sm:text-5xl md:text-6xl font-black tracking-[0.12em] text-itf-ink mb-4">Conclusion</div>
+          <div className="text-left text-base sm:text-lg leading-relaxed text-itf-ink/80 space-y-4 max-w-none">
+            <p className="font-semibold">
+              {year} was a year of resilience and measured progress especially in Revenue generation, this was made possible via commitment, loyalty, teamwork and professionalism which is highly commendable.
+            </p>
+            <p>
+              The Fund has reaffirmed its commitment to excellence in human capital development with sustained focus on efficiency and is poised to achieve even greater impact in building a skilled, competitive workforce for national development.
+            </p>
+            <p>
+              The Corporate Planning Department on behalf of the Staff of the Fund, wishes to appreciate the Director-General/Chief Executive, for his kind approval for the implementation of this programme and the support of the Management team.
+            </p>
+            <p>
+              We pray that God graciously grant all of us, as individuals and teams, the ability and capacity to do more in the years to come.
+            </p>
+          </div>
+          <div className="mt-6 text-5xl sm:text-6xl font-black text-itf-red">Thank you</div>
+        </div>
+      </section>
 
       {(notes.data?.length ?? 0) > 0 && (
         <Section kicker="Commentary" title="Presenter Notes">

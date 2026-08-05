@@ -1,11 +1,11 @@
 import type { ReactNode } from "react";
 
-export function Section({ title, children, kicker }: { title: string; children: ReactNode; kicker?: string }) {
+export function Section({ title, children, kicker, titleClassName }: { title: string; children: ReactNode; kicker?: string; titleClassName?: string }) {
   return (
     <section className="bg-white border border-itf-rule rounded-md shadow-sm">
       <header className="px-6 py-4 border-b border-itf-rule bg-itf-green/[0.04]">
         {kicker && <div className="text-sm tracking-[0.18em] uppercase text-itf-red font-black">{kicker}</div>}
-        <h2 className="text-2xl sm:text-3xl font-black tracking-tight text-itf-ink">{title}</h2>
+        <h2 className={`text-2xl sm:text-3xl font-black tracking-tight text-itf-ink ${titleClassName ?? ""}`}>{title}</h2>
       </header>
       <div className="p-6">{children}</div>
     </section>
