@@ -32,7 +32,7 @@ const formatChartAxis = (value: number) => {
   return `${value.toFixed(2)}B`;
 };
 
-function RevenueTooltip({ active, payload, label }: { active?: boolean; payload?: Array<any>; label?: string | number }) {
+function RevenueTooltip({ active, payload, label, prevYearLabel, currentYearLabel }: { active?: boolean; payload?: Array<any>; label?: string | number; prevYearLabel: string; currentYearLabel: string }) {
   if (!active || !payload?.length) return null;
 
   const firstEntry = payload[0] as any;
@@ -49,12 +49,12 @@ function RevenueTooltip({ active, payload, label }: { active?: boolean; payload?
       <div className="mb-2 font-semibold text-itf-ink">{String(label ?? "Value")}</div>
       <div className="space-y-1">
         <div className="flex items-center justify-between gap-3">
-          <span className="font-medium text-itf-ink/70">Previous</span>
-          <span className="font-semibold text-itf-ink">{formatChartAmount(previousValue)}</span>
+          <span className="font-medium text-itf-red">{prevYearLabel}</span>
+          <span className="font-semibold text-itf-red">{formatChartAmount(previousValue)}</span>
         </div>
         <div className="flex items-center justify-between gap-3">
-          <span className="font-medium text-itf-ink/70">Current</span>
-          <span className="font-semibold text-itf-ink">{formatChartAmount(currentValue)}</span>
+          <span className="font-medium text-itf-green">{currentYearLabel}</span>
+          <span className="font-semibold text-itf-green">{formatChartAmount(currentValue)}</span>
         </div>
         <div className={`flex items-center justify-between gap-3 ${delta >= 0 ? "text-itf-green" : "text-itf-red"}`}>
           <span className="font-medium">Difference</span>
@@ -201,7 +201,7 @@ function Revenue() {
                 <CartesianGrid stroke="#e5e7eb" vertical={false} />
                 <XAxis dataKey="category" tick={{ fontSize: 12 }} />
                 <YAxis tick={{ fontSize: 12 }} tickFormatter={(value: number) => formatChartAxis(Number(value))} />
-                <Tooltip content={<RevenueTooltip />} />
+                <Tooltip content={<RevenueTooltip prevYearLabel={prevLabel} currentYearLabel={currentLabel} />} />
                 <Legend />
                 <Bar dataKey={prevLabel} fill="#C8102E" />
                 <Bar dataKey={currentLabel} fill="#00723F" />
@@ -224,7 +224,7 @@ function Revenue() {
                 <CartesianGrid stroke="#e5e7eb" vertical={false} />
                 <XAxis type="number" tick={{ fontSize: 12 }} unit="B" />
                 <YAxis dataKey="office" type="category" width={160} tick={{ fontSize: 12 }} />
-                <Tooltip content={<RevenueTooltip />} />
+                <Tooltip content={<RevenueTooltip prevYearLabel={prevLabel} currentYearLabel={currentLabel} />} />
                 <Legend />
                 <Bar dataKey="prev" name={`${prevLabel} Actual`} fill="#C8102E" />
                 <Bar dataKey="current" name={`${currentLabel} Actual`} fill="#00723F" />
@@ -342,7 +342,7 @@ function Revenue() {
                             <CartesianGrid stroke="#e5e7eb" vertical={false} />
                             <XAxis type="number" tick={{ fontSize: 12 }} tickFormatter={(value: number) => formatChartAxis(Number(value))} />
                             <YAxis dataKey="office" type="category" width={160} tick={{ fontSize: 12 }} />
-                            <Tooltip content={<RevenueTooltip />} />
+                            <Tooltip content={<RevenueTooltip prevYearLabel={prevLabel} currentYearLabel={currentLabel} />} />
                             <Legend />
                             <Bar dataKey="prev" name={`${prevLabel} Actual`} fill="#C8102E" />
                             <Bar dataKey="current" name={`${currentLabel} Actual`} fill="#00723F" />

@@ -73,6 +73,10 @@ function isTrainingCentre(row: RevenueRowLike) {
   return inferRevenueMode(row) === "training-centre";
 }
 
+function isStaffSchool(row: RevenueRowLike) {
+  return String(row.office ?? "").trim() === "Staff School";
+}
+
 function buildStreamSummary(rows: RevenueRowLike[], previousRows: RevenueRowLike[], stream: RevenueStream): RevenueStreamSummary {
   const currentActual = rows.reduce((sum, row) => sum + Number(normalizeStream(row.stream) === stream ? row.actual ?? 0 : 0), 0);
   const currentTarget = rows.reduce((sum, row) => sum + Number(normalizeStream(row.stream) === stream ? row.target ?? 0 : 0), 0);
@@ -135,8 +139,8 @@ function buildSectionForCategory(category: string, currentRows: RevenueRowLike[]
 }
 
 function buildTrainingCentreSections(currentRows: RevenueRowLike[], previousRows: RevenueRowLike[]): RevenueSectionSummary[] {
-  const tcCurrentRows = currentRows.filter((r) => isTrainingCentre(r));
-  const tcPreviousRows = previousRows.filter((r) => isTrainingCentre(r));
+  const tcCurrentRows = currentRows.filter((r) => isTrainingCentre(r) && !isStaffSchool(r));
+  const tcPreviousRows = previousRows.filter((r) => isTrainingCentre(r) && !isStaffSchool(r));
 
   const rows = STREAMS.map((stream) => buildStreamSummary(
     tcCurrentRows.filter((row) => normalizeStream(row.stream) === stream),

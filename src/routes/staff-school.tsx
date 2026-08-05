@@ -2,11 +2,49 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
-import { Kpi, Note, Section, DataTable, EmptyState } from "@/components/dashboard/widgets";
-import { staffSchool } from "@/data/itf2024";
+import { EnhancedKpi, Kpi, Note, Section, DataTable, EmptyState } from "@/components/dashboard/widgets";
+import { fmtNaira, staffSchool } from "@/data/itf2024";
 import { useYear } from "@/lib/year-context";
 import { supabase } from "@/integrations/supabase/client";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend } from "recharts";
+
+function RevenueTooltip({ active, payload, label, prevYearLabel, currentYearLabel }: { active?: boolean; payload?: Array<any>; label?: string | number; prevYearLabel: string; currentYearLabel: string }) {
+  if (!active || !payload?.length) return null;
+  const firstEntry = payload[0] as any;
+  const row = firstEntry?.payload as Record<string, any> | undefined;
+  if (!row) return null;
+  const previousValue = Number(row.prev ?? 0);
+  const currentValue = Number(row.current ?? 0);
+  const delta = currentValue - previousValue;
+  const pct = previousValue === 0 ? 0 : (delta / previousValue) * 100;
+
+  return (
+    <div className="rounded-lg border border-itf-rule bg-white/95 px-3 py-2 text-sm shadow-lg">
+      <div className="mb-2 font-semibold text-itf-ink">{String(label ?? "Staff School")}</div>
+      <div className="space-y-1">
+        <div className="flex items-center justify-between gap-3">
+          <span className="font-medium text-itf-red">{prevYearLabel}</span>
+          <span className="font-semibold text-itf-red">{fmtNaira(previousValue * 1_000_000)}</span>
+        </div>
+        <div className="flex items-center justify-between gap-3">
+          <span className="font-medium text-itf-green">{currentYearLabel}</span>
+          <span className="font-semibold text-itf-green">{fmtNaira(currentValue * 1_000_000)}</span>
+        </div>
+        <div className={`flex items-center justify-between gap-3 ${delta >= 0 ? "text-itf-green" : "text-itf-red"}`}>
+          <span className="font-medium">Difference</span>
+          <span className="font-semibold">{delta >= 0 ? "+" : ""}{fmtNaira(Math.abs(delta) * 1_000_000)}</span>
+        </div>
+        <div className={`flex items-center justify-between gap-3 ${pct >= 0 ? "text-itf-green" : "text-itf-red"}`}>
+          <span className="font-medium">YoY</span>
+          <span className="font-semibold inline-flex items-center gap-1">
+            <span>{pct >= 0 ? "▲" : "▼"}</span>
+            <span>{pct >= 0 ? "+" : ""}{pct.toFixed(1)}%</span>
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export const Route = createFileRoute("/staff-school")({
   head: () => ({
@@ -39,6 +77,26 @@ function StaffSchool() {
     enabled: !!prevYear,
     queryFn: async () => {
       const { data, error } = await supabase.from("staff_school").select("*").eq("year", prevYear as number).order("exam");
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
+  const { data: staffRevenueCurrent = [] } = useQuery({
+    queryKey: ["area_revenue", "staff_school", year],
+    enabled: year > 0,
+    queryFn: async () => {
+      const { data, error } = await supabase.from("area_revenue").select("*").eq("year", year).eq("office", "Staff School");
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
+  const { data: staffRevenuePrevious = [] } = useQuery({
+    queryKey: ["area_revenue", "staff_school", prevYear],
+    enabled: !!prevYear,
+    queryFn: async () => {
+      const { data, error } = await supabase.from("area_revenue").select("*").eq("year", prevYear as number).eq("office", "Staff School");
       if (error) throw error;
       return data ?? [];
     },
@@ -106,6 +164,29 @@ function StaffSchool() {
   const avgPassCur = staffExamData.length > 0 ? staffExamData.reduce((sum, row) => sum + row.pctCur, 0) / staffExamData.length : 0;
   const totalStudentsPrev = staffExamData.reduce((sum, row) => sum + row.studentsPrev, 0);
   const totalPassedPrev = staffExamData.reduce((sum, row) => sum + row.passedPrev, 0);
+  const avgPassPrev = staffExamData.length > 0 ? staffExamData.reduce((sum, row) => sum + row.pctPrev, 0) / staffExamData.length : 0;
+
+  const staffRevenueTotals = staffRevenueCurrent.reduce(
+    (acc, row) => ({
+      target: acc.target + Number(row.target ?? 0),
+      actual: acc.actual + Number(row.actual ?? 0),
+    }),
+    { target: 0, actual: 0 },
+  );
+
+  const previousRevenueTotals = staffRevenuePrevious.reduce(
+    (acc, row) => ({
+      target: acc.target + Number(row.target ?? 0),
+      actual: acc.actual + Number(row.actual ?? 0),
+    }),
+    { target: 0, actual: 0 },
+  );
+
+  const prevYearLabel = prevYear ? String(prevYear) : "Previous";
+  const currentYearLabel = String(year);
+
+  const staffRevenueCurrentActual = staffRevenueTotals.actual;
+  const staffRevenuePreviousActual = previousRevenueTotals.actual;
 
   const staffChart = staffExamData.map((entry) => ({
     exam: entry.exam,
@@ -113,38 +194,62 @@ function StaffSchool() {
     [staffCurrentLabel]: entry.pctCur,
   }));
 
+  const staffRevenueComparisonData = [
+    {
+      office: "Staff School",
+      prev: previousRevenueTotals.actual / 1_000_000,
+      current: staffRevenueTotals.actual / 1_000_000,
+    },
+  ];
+
   return (
     <DashboardLayout title="Staff School" subtitle="Staff School certificate exam performance and live results from the admin module.">
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Kpi
-          label={`Total Students ${year}`}
-          value={totalStudentsCur.toLocaleString()}
-          sub={prevYear ? `vs ${totalStudentsPrev.toLocaleString()} in TY ${prevYear}` : "Live student headcount"}
-          tone="good"
+        <EnhancedKpi
+          label="Total Students"
+          currentValue={totalStudentsCur}
+          previousValue={prevYear ? totalStudentsPrev : undefined}
+          currentYear={year}
+          previousYear={prevYear}
+          formatValue={(value) => value.toLocaleString()}
+          tone={totalStudentsCur >= totalStudentsPrev ? "good" : "warn"}
+          noteText={hasLiveStaffSchoolData ? "Based on live admin data and previous year exam results." : "Based on sample fallback data."}
         />
-        <Kpi
-          label={`Number passed with 5 credits and above including English and Maths ${year}`}
-          value={totalPassedCur.toLocaleString()}
-          sub={prevYear ? `vs ${totalPassedPrev.toLocaleString()} in TY ${prevYear}` : "Live pass totals"}
-          tone="good"
+        <EnhancedKpi
+          label="Number passed with 5 credits and above including English and Maths"
+          currentValue={totalPassedCur}
+          previousValue={prevYear ? totalPassedPrev : undefined}
+          currentYear={year}
+          previousYear={prevYear}
+          formatValue={(value) => value.toLocaleString()}
+          tone={totalPassedCur >= totalPassedPrev ? "good" : "warn"}
+          noteText={hasLiveStaffSchoolData ? "Based on live admin data and previous year exam results." : "Based on sample fallback data."}
         />
-        <Kpi
-          label={`Average Pass Rate ${year}`}
-          value={`${avgPassCur.toFixed(1)}%`}
-          sub={hasLiveStaffSchoolData ? "Based on live admin data" : "Based on sample fallback data"}
-          tone={avgPassCur >= 90 ? "good" : avgPassCur >= 70 ? "warn" : "neutral"}
+        <EnhancedKpi
+          label="Average Pass Rate"
+          currentValue={avgPassCur}
+          previousValue={prevYear ? avgPassPrev : undefined}
+          currentYear={year}
+          previousYear={prevYear}
+          formatValue={(value) => `${value.toFixed(1)}%`}
+          tone={avgPassCur >= avgPassPrev ? "good" : "warn"}
+          noteText={hasLiveStaffSchoolData ? "Based on live admin data and previous year exam results." : "Based on sample fallback data."}
         />
-        <Kpi
-          label="Staff School Data Source"
-          value={hasLiveStaffSchoolData ? "Live admin data" : "Sample dataset"}
-          sub="Use Admin > Staff School Results to add or edit live rows."
-          tone={hasLiveStaffSchoolData ? "good" : "warn"}
+        <EnhancedKpi
+          label="Staff School Revenue"
+          currentValue={staffRevenueCurrentActual}
+          previousValue={prevYear ? staffRevenuePreviousActual : undefined}
+          currentYear={year}
+          previousYear={prevYear}
+          formatValue={fmtNaira}
+          tone={staffRevenueCurrentActual >= staffRevenuePreviousActual ? "good" : "warn"}
+          noteText="This card reflects the live Staff School revenue generated for the selected year, compared to the prior year."
         />
       </div>
 
       <Section kicker="Exam Performance" title="Certificate Exam Pass Rates by Exam">
         <DataTable
-          headers={["Exam", `Students ${prevYear ?? "Prev"}`, `Students ${year}`, `Number passed with 5 credits and above including English and Maths ${prevYear ?? "Prev"}`, `Number passed with 5 credits and above including English and Maths ${year}`, `% ${prevYear ?? "Prev"}`, `% ${year}`]}
+          headers={["Exam", `Students ${prevYear ?? "Prev"}`, `Students ${year}`, `Number passed with 5 credits and above including English and Maths ${prevYear ?? "Prev"}`, `Number passed with 5 credits and above including English and Maths ${year}`, `% Achieved ${prevYear ?? "Prev"}`, `% Achieved ${year}`]}
           rows={staffExamData.map((row) => [
             row.exam,
             row.studentsPrev.toLocaleString(),
@@ -172,6 +277,70 @@ function StaffSchool() {
               <Legend />
               <Bar dataKey={staffPrevLabel} fill="#C8102E" />
               <Bar dataKey={staffCurrentLabel} fill="#00723F" />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      </Section>
+      <Section kicker="Staff School Revenue" title="Staff School — Revenue Comparison">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+          <div className="bg-white rounded-lg border border-itf-rule p-4">
+            <div className="text-sm text-itf-ink/60">Current year actual</div>
+            <div className="mt-4 text-3xl font-semibold text-itf-green">₦{staffRevenueTotals.actual.toLocaleString()}</div>
+            <div className="text-sm text-itf-ink/70">Current year target: ₦{staffRevenueTotals.target.toLocaleString()}</div>
+          </div>
+          <div className="bg-white rounded-lg border border-itf-rule p-4">
+            <div className="text-sm text-itf-ink/60">Previous year actual</div>
+            <div className="mt-4 text-3xl font-semibold text-itf-ink">₦{previousRevenueTotals.actual.toLocaleString()}</div>
+            <div className="text-sm text-itf-ink/70">Previous year target: ₦{previousRevenueTotals.target.toLocaleString()}</div>
+          </div>
+        </div>
+        <div className="overflow-x-auto mb-6">
+          <DataTable
+            headers={[
+              "Stream",
+              `${prevYearLabel} Target`,
+              `${prevYearLabel} Actual`,
+              `${prevYearLabel} % Achieved`,
+              `${currentYearLabel} Target`,
+              `${currentYearLabel} Actual`,
+              `${currentYearLabel} % Achieved`,
+            ]}
+            rows={[
+              [
+                "Course Fee",
+                staffRevenuePrevious.filter((row) => String(row.stream ?? "").trim() === "Course Fee").reduce((sum, row) => sum + Number(row.target ?? 0), 0).toLocaleString(),
+                staffRevenuePrevious.filter((row) => String(row.stream ?? "").trim() === "Course Fee").reduce((sum, row) => sum + Number(row.actual ?? 0), 0).toLocaleString(),
+                `${(staffRevenuePrevious.filter((row) => String(row.stream ?? "").trim() === "Course Fee").reduce((sum, row) => sum + Number(row.actual ?? 0), 0) / Math.max(1, staffRevenuePrevious.filter((row) => String(row.stream ?? "").trim() === "Course Fee").reduce((sum, row) => sum + Number(row.target ?? 0), 0)) * 100).toFixed(1)}%`,
+                staffRevenueCurrent.filter((row) => String(row.stream ?? "").trim() === "Course Fee").reduce((sum, row) => sum + Number(row.target ?? 0), 0).toLocaleString(),
+                staffRevenueCurrent.filter((row) => String(row.stream ?? "").trim() === "Course Fee").reduce((sum, row) => sum + Number(row.actual ?? 0), 0).toLocaleString(),
+                `${(staffRevenueCurrent.filter((row) => String(row.stream ?? "").trim() === "Course Fee").reduce((sum, row) => sum + Number(row.actual ?? 0), 0) / Math.max(1, staffRevenueCurrent.filter((row) => String(row.stream ?? "").trim() === "Course Fee").reduce((sum, row) => sum + Number(row.target ?? 0), 0)) * 100).toFixed(1)}%`,
+              ],
+              [
+                "Other Income",
+                staffRevenuePrevious.filter((row) => String(row.stream ?? "").trim() === "Other Income").reduce((sum, row) => sum + Number(row.target ?? 0), 0).toLocaleString(),
+                staffRevenuePrevious.filter((row) => String(row.stream ?? "").trim() === "Other Income").reduce((sum, row) => sum + Number(row.actual ?? 0), 0).toLocaleString(),
+                `${(staffRevenuePrevious.filter((row) => String(row.stream ?? "").trim() === "Other Income").reduce((sum, row) => sum + Number(row.actual ?? 0), 0) / Math.max(1, staffRevenuePrevious.filter((row) => String(row.stream ?? "").trim() === "Other Income").reduce((sum, row) => sum + Number(row.target ?? 0), 0)) * 100).toFixed(1)}%`,
+                staffRevenueCurrent.filter((row) => String(row.stream ?? "").trim() === "Other Income").reduce((sum, row) => sum + Number(row.target ?? 0), 0).toLocaleString(),
+                staffRevenueCurrent.filter((row) => String(row.stream ?? "").trim() === "Other Income").reduce((sum, row) => sum + Number(row.actual ?? 0), 0).toLocaleString(),
+                `${(staffRevenueCurrent.filter((row) => String(row.stream ?? "").trim() === "Other Income").reduce((sum, row) => sum + Number(row.actual ?? 0), 0) / Math.max(1, staffRevenueCurrent.filter((row) => String(row.stream ?? "").trim() === "Other Income").reduce((sum, row) => sum + Number(row.target ?? 0), 0)) * 100).toFixed(1)}%`,
+              ],
+            ]}
+          />
+        </div>
+        <div className="h-[420px]">
+          <ResponsiveContainer>
+            <BarChart
+              layout="vertical"
+              data={staffRevenueComparisonData}
+              margin={{ top: 12, right: 16, left: 160, bottom: 12 }}
+            >
+              <CartesianGrid stroke="#e5e7eb" vertical={false} />
+              <XAxis type="number" tick={{ fontSize: 12 }} tickFormatter={(value: number) => `${value.toFixed(1)}M`} />
+              <YAxis dataKey="office" type="category" width={160} tick={{ fontSize: 12 }} />
+              <Tooltip content={<RevenueTooltip prevYearLabel={prevYearLabel} currentYearLabel={currentYearLabel} />} />
+              <Legend />
+              <Bar dataKey="prev" name={prevYearLabel} fill="#C8102E" />
+              <Bar dataKey="current" name={currentYearLabel} fill="#00723F" />
             </BarChart>
           </ResponsiveContainer>
         </div>
