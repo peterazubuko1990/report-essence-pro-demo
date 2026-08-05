@@ -62,9 +62,9 @@ function Insights() {
       )}
 
       <div className="grid md:grid-cols-2 gap-6">
-        <Section kicker="Challenges" title="Challenges / Constraints">
+        <Section kicker="Bottleneck" title="Bottleneck / Constraints">
           {(challenges.data?.length ?? 0) === 0
-            ? <div className="text-sm text-itf-ink/60">No challenges recorded.</div>
+            ? <div className="text-sm text-itf-ink/60">No bottleneck recorded.</div>
             : <ul className="list-disc pl-5 space-y-2 text-sm">{(challenges.data ?? []).map((c) => <li key={c.id}>{c.text}</li>)}</ul>}
         </Section>
         <Section kicker="Way Forward" title="Recommendations">

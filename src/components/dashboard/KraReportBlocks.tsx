@@ -153,11 +153,13 @@ export const PercentageChart = memo(function PercentageChart({
   currentYear,
   previousYear,
   rows,
+  deltaMode = "relative",
 }: {
   title: string;
   currentYear: number;
   previousYear: number | null;
   rows: ComparisonRow[];
+  deltaMode?: "relative" | "difference";
 }) {
   const series = useMemo(
     () => (previousYear ? [String(previousYear), String(currentYear)] : [String(currentYear)]),
@@ -177,7 +179,7 @@ export const PercentageChart = memo(function PercentageChart({
   return (
     <div className="overflow-hidden rounded-[30px] border border-itf-rule bg-white shadow-[0_16px_40px_-24px_rgba(0,0,0,0.35)]">
       <ChartCard title={title} kicker="Comparison" defaultKind="bar" allowKinds={["bar"]}>
-        {(kind) => <ChartRenderer data={data} xKey="kpi" series={series} kind={kind} unit="%" />}
+        {(kind) => <ChartRenderer data={data} xKey="kpi" series={series} kind={kind} unit="%" tooltipDeltaMode={deltaMode} />}
       </ChartCard>
     </div>
   );
