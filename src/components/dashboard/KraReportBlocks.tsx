@@ -65,6 +65,64 @@ const renderValueWithTrend = (previousValue: number | null | undefined, currentV
   );
 };
 
+function KRAChartTooltip({
+  active,
+  payload,
+  label,
+  prevYearLabel,
+  currentYearLabel,
+  deltaMode = "difference",
+}: {
+  active?: boolean;
+  payload?: Array<any>;
+  label?: string | number;
+  prevYearLabel: string;
+  currentYearLabel: string;
+  deltaMode?: "relative" | "difference";
+}) {
+  if (!active || !payload?.length) return null;
+
+  const previousEntry = payload.length > 1 ? (payload[0] as any) : null;
+  const currentEntry = payload.length > 1 ? (payload[1] as any) : (payload[0] as any);
+  const previousValue = previousEntry ? Number(previousEntry?.value ?? 0) : null;
+  const currentValue = Number(currentEntry?.value ?? 0);
+  const difference = previousValue !== null ? currentValue - previousValue : null;
+  const absDifference = difference === null ? null : Math.abs(difference);
+  const tone = difference === null ? "text-itf-ink/70" : difference > 0 ? "text-itf-green" : difference < 0 ? "text-itf-red" : "text-itf-ink/70";
+  const arrow = difference === null ? "•" : difference > 0 ? "▲" : difference < 0 ? "▼" : "•";
+
+  const formatPercentValue = (value: number) => `${value.toFixed(2)}%`;
+
+  return (
+    <div className="rounded-lg border border-itf-rule bg-white/95 px-3 py-2 text-sm shadow-lg">
+      <div className="mb-2 font-semibold text-itf-ink">{String(label ?? "Value")}</div>
+      <div className="space-y-1">
+        {previousValue !== null ? (
+          <div className="flex items-center justify-between gap-3">
+            <span className="font-medium text-itf-red">{prevYearLabel}</span>
+            <span className="font-semibold text-itf-red">{formatPercentValue(previousValue)}</span>
+          </div>
+        ) : null}
+        <div className="flex items-center justify-between gap-3">
+          <span className={`font-medium ${previousValue !== null ? "text-itf-green" : "text-itf-ink/70"}`}>
+            {previousValue !== null ? currentYearLabel : prevYearLabel}
+          </span>
+          <span className={`font-semibold ${previousValue !== null ? "text-itf-green" : "text-itf-ink/70"}`}>{formatPercentValue(currentValue)}</span>
+        </div>
+        {difference !== null ? (
+          <div className={`flex items-center justify-between gap-3 ${tone}`}>
+            <span className="font-medium">Difference</span>
+            <span className="font-semibold inline-flex items-center gap-1">
+              <span>{arrow}</span>
+              <span>{absDifference !== null ? formatPercentValue(absDifference) : "—"}</span>
+            </span>
+          </div>
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
 export const ReportHeader = memo(function ReportHeader({ title, subtitle }: { title: string; subtitle?: string }) {
   return (
     <div className="relative overflow-hidden rounded-[36px] border border-itf-rule bg-gradient-to-br from-white via-itf-canvas to-white p-6 shadow-[0_20px_60px_-20px_rgba(0,0,0,0.2)] sm:p-8">
@@ -179,7 +237,23 @@ export const PercentageChart = memo(function PercentageChart({
   return (
     <div className="overflow-hidden rounded-[30px] border border-itf-rule bg-white shadow-[0_16px_40px_-24px_rgba(0,0,0,0.35)]">
       <ChartCard title={title} kicker="Comparison" defaultKind="bar" allowKinds={["bar"]}>
-        {(kind) => <ChartRenderer data={data} xKey="kpi" series={series} kind={kind} unit="%" tooltipDeltaMode={deltaMode} />}
+        {(kind) => (
+          <ChartRenderer
+            data={data}
+            xKey="kpi"
+            series={series}
+            kind={kind}
+            unit="%"
+            tooltipDeltaMode={deltaMode}
+            tooltipContent={
+              <KRAChartTooltip
+                prevYearLabel={previousYear ? String(previousYear) : "Previous"}
+                currentYearLabel={String(currentYear)}
+                deltaMode={deltaMode}
+              />
+            }
+          />
+        )}
       </ChartCard>
     </div>
   );

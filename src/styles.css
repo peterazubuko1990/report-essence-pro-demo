@@ -162,4 +162,10 @@
     color: var(--color-foreground);
     font-weight: 700;
   }
+
+  .executive-overview-root,
+  .executive-overview-root * {
+    color: #000 !important;
+    font-weight: 700 !important;
+  }
 }

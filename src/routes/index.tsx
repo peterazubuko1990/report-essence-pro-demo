@@ -213,8 +213,9 @@ function ExecutiveOverview() {
       title={`Executive Overview — TY ${year}`}
       subtitle={prevYear ? `One-page snapshot for TY ${year} with TY ${prevYear} comparisons.` : `One-page snapshot for TY ${year}.`}
     >
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-        {/* Total Income */}
+      <div className="executive-overview-root">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+          {/* Total Income */}
         <EnhancedKpi
           label={`Total Income ${year}`}
           currentValue={totalRevCur}
@@ -406,6 +407,7 @@ function ExecutiveOverview() {
 
       <div className="text-xs text-itf-ink/60">
         Achievement formula: <code>Actual ÷ Target × 100</code>. Growth formula: <code>(Current − Previous) ÷ Previous × 100</code>.
+      </div>
       </div>
     </DashboardLayout>
   );
