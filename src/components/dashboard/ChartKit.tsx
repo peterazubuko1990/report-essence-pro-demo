@@ -146,7 +146,7 @@ export function ChartTypeSelector({
  */
 export function ChartRenderer({
   data, xKey, series, kind, height = 288, unit,
-  seriesColors, tooltipDeltaMode = "relative",
+  seriesColors, tooltipDeltaMode = "relative", tooltipContent,
 }: {
   data: any[];
   xKey: string;
@@ -156,6 +156,7 @@ export function ChartRenderer({
   unit?: string;
   seriesColors?: string[];
   tooltipDeltaMode?: "relative" | "difference";
+  tooltipContent?: ReactNode;
 }) {
   const defaultColors = seriesColors ?? COLORS;
   const colors = (!seriesColors && series.length >= 2)
@@ -173,7 +174,7 @@ export function ChartRenderer({
             <CartesianGrid stroke="#e5e7eb" vertical={false} />
             <XAxis dataKey={xKey} tick={{ fontSize: 13, fontWeight: 600 }} angle={-15} textAnchor="end" />
             <YAxis tick={{ fontSize: 13, fontWeight: 600 }} tickFormatter={(value) => formatAxisTick(Number(value), unit)} />
-            <Tooltip content={<TooltipContent unit={unit} deltaMode={tooltipDeltaMode} />} />
+            <Tooltip content={tooltipContent ?? <TooltipContent unit={unit} deltaMode={tooltipDeltaMode} />} />
             <Legend wrapperStyle={{ fontSize: 13, fontWeight: 600 }} />
             {series.map((s, i) => <Bar key={s} dataKey={s} fill={colors[i % colors.length]} />)}
           </BarChart>
@@ -182,7 +183,7 @@ export function ChartRenderer({
             <CartesianGrid stroke="#e5e7eb" vertical={false} />
             <XAxis dataKey={xKey} tick={{ fontSize: 13, fontWeight: 600 }} angle={-15} textAnchor="end" />
             <YAxis tick={{ fontSize: 13, fontWeight: 600 }} tickFormatter={(value) => formatAxisTick(Number(value), unit)} />
-            <Tooltip content={<TooltipContent unit={unit} deltaMode={tooltipDeltaMode} />} />
+            <Tooltip content={tooltipContent ?? <TooltipContent unit={unit} deltaMode={tooltipDeltaMode} />} />
             <Legend wrapperStyle={{ fontSize: 13, fontWeight: 600 }} />
             {series.map((s, i) => <Line key={s} type="monotone" dataKey={s} stroke={colors[i % colors.length]} strokeWidth={2} dot />)}
           </LineChart>
@@ -191,7 +192,7 @@ export function ChartRenderer({
             <CartesianGrid stroke="#e5e7eb" vertical={false} />
             <XAxis dataKey={xKey} tick={{ fontSize: 13, fontWeight: 600 }} angle={-15} textAnchor="end" />
             <YAxis tick={{ fontSize: 13, fontWeight: 600 }} tickFormatter={(value) => formatAxisTick(Number(value), unit)} />
-            <Tooltip content={<TooltipContent unit={unit} deltaMode={tooltipDeltaMode} />} />
+            <Tooltip content={tooltipContent ?? <TooltipContent unit={unit} deltaMode={tooltipDeltaMode} />} />
             <Legend wrapperStyle={{ fontSize: 13, fontWeight: 600 }} />
             {series.map((s, i) => <Area key={s} type="monotone" dataKey={s} fill={colors[i % colors.length]} stroke={colors[i % colors.length]} fillOpacity={0.35} />)}
           </AreaChart>
@@ -200,7 +201,7 @@ export function ChartRenderer({
             <Pie data={pieData} dataKey="value" nameKey="name" innerRadius={kind === "donut" ? 65 : 0} outerRadius={120} label={(d: any) => `${d.name}`}>
               {pieData.map((_, i) => <Cell key={i} fill={colors[i % colors.length]} />)}
             </Pie>
-            <Tooltip />
+            <Tooltip content={tooltipContent ?? <TooltipContent unit={unit} deltaMode={tooltipDeltaMode} />} />
             <Legend />
           </PieChart>
         ) : (
@@ -211,7 +212,7 @@ export function ChartRenderer({
             {series.map((s, i) => (
               <Radar key={s} name={s} dataKey={s} stroke={colors[i % colors.length]} fill={colors[i % colors.length]} fillOpacity={0.35} />
             ))}
-            <Tooltip content={<TooltipContent unit={unit} deltaMode={tooltipDeltaMode} />} />
+            <Tooltip content={tooltipContent ?? <TooltipContent unit={unit} deltaMode={tooltipDeltaMode} />} />
             <Legend />
           </RadarChart>
         )}

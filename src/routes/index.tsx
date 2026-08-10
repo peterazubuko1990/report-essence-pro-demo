@@ -8,6 +8,55 @@ import { useYear } from "@/lib/year-context";
 import { supabase } from "@/integrations/supabase/client";
 import { buildRevenueAggregation } from "@/lib/revenue-data";
 
+const formatIncomeChartAmount = (value: number) => {
+  const abs = Math.abs(value);
+  if (abs < 1) {
+    const millions = value * 1000;
+    return `₦${millions.toLocaleString(undefined, { maximumFractionDigits: millions >= 100 ? 0 : 1 })}M`;
+  }
+  return `₦${value.toFixed(2)}B`;
+};
+
+function IncomeTooltip({ active, payload, label, prevYearLabel, currentYearLabel }: { active?: boolean; payload?: Array<any>; label?: string | number; prevYearLabel: string; currentYearLabel: string }) {
+  if (!active || !payload?.length) return null;
+
+  const firstEntry = payload[0] as any;
+  const row = firstEntry?.payload as Record<string, any> | undefined;
+  if (!row) return null;
+
+  const previousValue = Number(row[prevYearLabel] ?? 0);
+  const currentValue = Number(row[currentYearLabel] ?? row[firstEntry.dataKey] ?? 0);
+  const delta = currentValue - previousValue;
+  const pct = previousValue === 0 ? 0 : (delta / previousValue) * 100;
+
+  return (
+    <div className="rounded-lg border border-itf-rule bg-white/95 px-3 py-2 text-sm shadow-lg">
+      <div className="mb-2 font-semibold text-itf-ink">{String(label ?? "Value")}</div>
+      <div className="space-y-1">
+        <div className="flex items-center justify-between gap-3">
+          <span className="font-medium text-itf-red">{prevYearLabel}</span>
+          <span className="font-semibold text-itf-red">{formatIncomeChartAmount(previousValue)}</span>
+        </div>
+        <div className="flex items-center justify-between gap-3">
+          <span className="font-medium text-itf-green">{currentYearLabel}</span>
+          <span className="font-semibold text-itf-green">{formatIncomeChartAmount(currentValue)}</span>
+        </div>
+        <div className={`flex items-center justify-between gap-3 ${delta >= 0 ? "text-itf-green" : "text-itf-red"}`}>
+          <span className="font-medium">Difference</span>
+          <span className="font-semibold">{delta >= 0 ? "+" : ""}{formatIncomeChartAmount(Math.abs(delta))}</span>
+        </div>
+        <div className={`flex items-center justify-between gap-3 ${pct >= 0 ? "text-itf-green" : "text-itf-red"}`}>
+          <span className="font-medium">YoY</span>
+          <span className="font-semibold inline-flex items-center gap-1">
+            <span>{pct >= 0 ? "▲" : "▼"}</span>
+            <span>{pct >= 0 ? "+" : ""}{pct.toFixed(1)}%</span>
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
@@ -165,16 +214,16 @@ function ExecutiveOverview() {
       subtitle={prevYear ? `One-page snapshot for TY ${year} with TY ${prevYear} comparisons.` : `One-page snapshot for TY ${year}.`}
     >
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-        {/* Total Revenue */}
+        {/* Total Income */}
         <EnhancedKpi
-          label={`Total Revenue ${year}`}
+          label={`Total Income ${year}`}
           currentValue={totalRevCur}
           previousValue={prevYear ? totalRevPrev : undefined}
           currentYear={year}
           previousYear={prevYear}
           formatValue={fmtNaira}
           tone={totalGrowth === null ? "neutral" : totalGrowth >= 0 ? "good" : "bad"}
-          noteText="This total combines the live revenue streams and includes training-centre income in the stream totals."
+          noteText="This total combines the live income streams and includes training-centre income in the stream totals."
         />
 
         {/* Training Contribution */}
@@ -244,9 +293,9 @@ function ExecutiveOverview() {
           noteText="This counts the KRA rows loaded for the selected year. It is a reporting count rather than a performance score."
         />
 
-        {/* Revenue Streams */}
+        {/* Income Streams */}
         <EnhancedKpi
-          label="Revenue Streams"
+          label="Income Streams"
           currentValue={revenueTotals.length}
           previousValue={undefined}
           currentYear={year}
@@ -254,7 +303,7 @@ function ExecutiveOverview() {
           formatValue={(v) => String(v)}
           isPositiveGood={true}
           tone="neutral"
-          noteText="This counts the headline revenue streams available in the current dataset."
+          noteText="This counts the headline income streams available in the current dataset."
         />
 
         {/* Target Achievement */}
@@ -273,29 +322,47 @@ function ExecutiveOverview() {
       {revChart.length > 0 && (
         <div className="grid gap-6 lg:grid-cols-2">
           <ChartCard
-            title={prevYear ? `${prevYear} vs ${year} — Revenue Streams (₦B)` : `${year} — Revenue Streams (₦B)`}
-            kicker="Revenue"
+            title={prevYear ? `${prevYear} vs ${year} — Income Streams (₦B)` : `${year} — Income Streams (₦B)`}
+            kicker="Income"
             defaultKind="bar"
             allowKinds={["bar", "line", "area", "radar"]}
           >
-            {(k) => <ChartRenderer data={revChart} xKey="name" series={prevYear ? [String(prevYear), String(year)] : [String(year)]} kind={k} unit="B" />}
+            {(k) => (
+              <ChartRenderer
+                data={revChart}
+                xKey="name"
+                series={prevYear ? [String(prevYear), String(year)] : [String(year)]}
+                kind={k}
+                unit="B"
+                tooltipContent={<IncomeTooltip prevYearLabel={prevYear ? String(prevYear) : "Previous"} currentYearLabel={String(year)} />}
+              />
+            )}
           </ChartCard>
 
           {smallStreamChart.length > 0 && (
             <ChartCard
-              title={`Focused Revenue Comparison — smaller streams`}
+              title={`Focused Income Comparison — smaller streams`}
               kicker="Detail"
               defaultKind="bar"
               allowKinds={["bar", "line", "area", "radar"]}
             >
-              {(k) => <ChartRenderer data={smallStreamChart} xKey="name" series={prevYear ? [String(prevYear), String(year)] : [String(year)]} kind={k} unit="B" />}
+              {(k) => (
+                <ChartRenderer
+                  data={smallStreamChart}
+                  xKey="name"
+                  series={prevYear ? [String(prevYear), String(year)] : [String(year)]}
+                  kind={k}
+                  unit="B"
+                  tooltipContent={<IncomeTooltip prevYearLabel={prevYear ? String(prevYear) : "Previous"} currentYearLabel={String(year)} />}
+                />
+              )}
             </ChartCard>
           )}
         </div>
       )}
       {smallStreamChart.length > 0 && (
         <div className="mt-4 rounded border border-itf-rule bg-white/80 px-4 py-3 text-sm text-itf-ink/70">
-          <p><strong>Note:</strong> The right-hand chart magnifies the smaller revenue streams so that Course Fee and Other Income are visible alongside Training Contribution.</p>
+          <p><strong>Note:</strong> The right-hand chart magnifies the smaller income streams so that Course Fee and Other Income are visible alongside Training Contribution.</p>
           <p className="mt-1">Training Contribution is much larger, so the overall chart uses a full-scale view. The focused chart shows the smaller streams in their own comparison.</p>
         </div>
       )}
