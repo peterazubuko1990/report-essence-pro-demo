@@ -176,8 +176,9 @@ function Revenue() {
 
   return (
     <DashboardLayout title="Income Analysis" subtitle={prevYear ? `Live income data for TY ${year} with TY ${prevYear} comparisons.` : `Live income data for TY ${year}.`}>
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-        <EnhancedKpi
+      <div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+          <EnhancedKpi
           label="Total Generated"
           currentValue={currentTotal}
           previousValue={prevYear ? previousTotal : undefined}
@@ -484,6 +485,7 @@ function Revenue() {
           </Accordion>
         </div>
       </Section>
-    </DashboardLayout>
+    </div>
+  </DashboardLayout>
   );
 }

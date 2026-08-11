@@ -85,12 +85,12 @@ export function EnhancedKpi({
   }
 
   return (
-    <div className={`bg-white border border-itf-rule border-l-4 ${borderColor} rounded-lg px-4 sm:px-6 py-4 sm:py-5 shadow-md hover:shadow-lg transition-shadow flex flex-col`}>
+    <div className={`bg-white border border-itf-rule border-l-4 ${borderColor} rounded-lg px-4 sm:px-6 py-4 sm:py-5 shadow-md hover:shadow-lg transition-shadow flex flex-col antialiased`}>
       {/* Card Header / Label */}
-      <div className="text-sm uppercase tracking-[0.16em] text-itf-ink/80 font-black mb-2">{label}</div>
+      <div className="text-sm sm:text-base uppercase tracking-[0.16em] text-black font-black mb-2">{label}</div>
       
       {/* Current Year Value - Largest Element */}
-      <div className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black text-itf-ink leading-tight mb-2 break-words">{formatValue(currentValue)}</div>
+      <div className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black text-black leading-tight mb-2 break-words">{formatValue(currentValue)}</div>
 
       {/* Year Badge */}
       <div className="text-sm sm:text-base font-black text-itf-ink/80 mb-4">TY {currentYear}</div>
