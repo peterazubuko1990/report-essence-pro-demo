@@ -213,7 +213,7 @@ function ExecutiveOverview() {
       title={`Executive Overview — TY ${year}`}
       subtitle={prevYear ? `One-page snapshot for TY ${year} with TY ${prevYear} comparisons.` : `One-page snapshot for TY ${year}.`}
     >
-      <div className="executive-overview-root">
+      <div>
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
           {/* Total Income */}
         <EnhancedKpi
