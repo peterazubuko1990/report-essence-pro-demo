@@ -50,6 +50,8 @@ const OFFICE_TO_STATE: Record<string, string> = {
   Enugu: "Enugu",
   Kaduna: "Kaduna",
   Kano: "Kano",
+  Jalingo: "Taraba",
+  Dutse: "Jigawa",
   Lafia: "Nasarawa",
   Warri: "Delta",
   Aba: "Abia",
